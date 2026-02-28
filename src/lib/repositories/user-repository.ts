@@ -3,18 +3,20 @@ import 'server-only';
 import {randomUUID} from 'crypto';
 
 import { sql } from '@/lib/db';
+import { email } from 'zod';
+import { promises } from 'dns';
 
 export type UserInfo = {
+    userid: number;
     username: string;
     firstname: string;
     lastname: string;
-    email: string | null;
+    email: string;
     dateofbirth: string | null;
     sex: string | null;
     bloodtype: string | null;
     password: string;
     role: string;
-    locationid: number | null;
 };
 
 
@@ -39,10 +41,34 @@ export async function ensureUsersTable(): Promise<void> {
 
 export async function findUserByEmail(email: string) {
     const rows = (await sql`
-        SELECT username, firstname, lastname, email, 
+        SELECT userid, username, firstname, lastname, email, 
         dateofbirth, sex, bloodtype, password, role, locationid 
         FROM users WHERE email = ${email}
         LIMIT 1
     `) as UserInfo[];
     return rows[0] ?? null;
+}
+
+
+export async function   createUser(input: {
+    username: string;
+    firstname: string;
+    lastname: string;
+    email: string;
+    dateofbirth: string | null;
+    sex: string | null;
+    bloodtype: string | null;
+    password: string;
+    role: string;
+
+}) : Promise<Pick<UserInfo, 'userid' | 'email' | 'firstname' | 'lastname'>> {
+    const id = randomUUID();
+
+    const rows = (await sql`
+        Insert into users (Username, FirstName, LastName, Email, DateOfBirth, password, Role)
+        VALUES (${input.username}, ${input.firstname}, ${input.lastname}, ${input.email}, ${input.dateofbirth}, ${input.password}, ${input.role})
+        RETURNING userid, email, firstname, lastname
+    `) as Pick<UserInfo, 'userid' | 'email' | 'firstname' | 'lastname'>[];
+
+    return rows[0];
 }
