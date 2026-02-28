@@ -1,33 +1,32 @@
 import 'server-only';
 
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { cookies } from 'next/headers';
 
-import { env } from '@/lib/env';
+import { SESSION_COOKIE_NAME } from '@/lib/auth/cookie';
+import { verifySessionToken } from '@/lib/auth/session';
 
-export type SessionPayload = JWTPayload & {
-  sub: string;
+export type CurrentUser = {
+  id: string;
   email: string;
   name: string;
 };
 
-const secret = new TextEncoder().encode(env.AUTH_SECRET);
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-export async function createSessionToken(payload: SessionPayload): Promise<string> {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('7d')
-    .sign(secret);
-}
-
-export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
-  try {
-    const result = await jwtVerify<SessionPayload>(token, secret, {
-      algorithms: ['HS256'],
-    });
-
-    return result.payload;
-  } catch {
+  if (!token) {
     return null;
   }
+
+  const payload = await verifySessionToken(token);
+  if (!payload) {
+    return null;
+  }
+
+  return {
+    id: payload.sub,
+    email: payload.email,
+    name: payload.name,
+  };
 }
