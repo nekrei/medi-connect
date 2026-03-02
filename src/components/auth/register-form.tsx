@@ -3,61 +3,320 @@
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 
-type ApiError = {
-    message?: string;
+type ApiError = { message?: string };
+
+const inputCls = 'w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400';
+const selectCls = inputCls;
+
+function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
+    return (
+        <div className="space-y-1">
+            <label htmlFor={id} className="text-sm font-medium">{label}</label>
+            {children}
+        </div>
+    );
+}
+
+// ── Shared basic fields ───────────────────────────────────────────────────────
+
+type BasicFields = {
+    username: string;
+    firstname: string;
+    lastname: string;
+    email: string;
+    dateofbirth: string;
+    sex: string;
+    bloodtype: string;
+    password: string;
+    confirmPassword: string;
 };
 
-export default function RegisterForm() {
+// ── Doctor-specific fields ────────────────────────────────────────────────────
+
+type DoctorFields = {
+    registrationnumber: string;
+    designation: string;
+    startpracticedate: string;
+    registrationexpiry: string;
+};
+
+// ── Step 1 ────────────────────────────────────────────────────────────────────
+
+function StepOne({
+    isDoctor,
+    fields,
+    onChange,
+    error,
+    onSubmit,
+}: {
+    isDoctor: boolean;
+    fields: BasicFields;
+    onChange: (key: keyof BasicFields, value: string) => void;
+    error: string;
+    onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+}) {
+    return (
+        <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+            {/* Header */}
+            <div className="space-y-1 pb-1">
+                {isDoctor && (
+                    <div className="mb-3 flex items-center gap-2">
+                        <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                            Doctor registration
+                        </span>
+                        <span className="text-xs text-zinc-400">Step 1 of 2</span>
+                    </div>
+                )}
+                <h1 className="text-xl font-semibold">
+                    {isDoctor ? 'Basic information' : 'Create account'}
+                </h1>
+                {isDoctor && (
+                    <p className="text-sm text-zinc-500">
+                        Your BMDC registration details will be collected on the next step.
+                    </p>
+                )}
+            </div>
+
+            <Field id="username" label="Username">
+                <input id="username" type="text" value={fields.username}
+                    onChange={(e) => onChange('username', e.target.value)}
+                    className={inputCls} minLength={3} maxLength={50} required />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+                <Field id="firstname" label="First name">
+                    <input id="firstname" type="text" value={fields.firstname}
+                        onChange={(e) => onChange('firstname', e.target.value)}
+                        className={inputCls} maxLength={50} required />
+                </Field>
+                <Field id="lastname" label="Last name">
+                    <input id="lastname" type="text" value={fields.lastname}
+                        onChange={(e) => onChange('lastname', e.target.value)}
+                        className={inputCls} maxLength={50} required />
+                </Field>
+            </div>
+
+            <Field id="email" label="Email">
+                <input id="email" type="email" value={fields.email}
+                    onChange={(e) => onChange('email', e.target.value)}
+                    className={inputCls} required />
+            </Field>
+
+            <Field id="dateofbirth" label="Date of birth">
+                <input id="dateofbirth" type="date" value={fields.dateofbirth}
+                    onChange={(e) => onChange('dateofbirth', e.target.value)}
+                    className={inputCls} required />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+                <Field id="sex" label="Sex">
+                    <select id="sex" value={fields.sex}
+                        onChange={(e) => onChange('sex', e.target.value)}
+                        className={selectCls}>
+                        <option value="">Prefer not to say</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </Field>
+                <Field id="bloodtype" label="Blood type">
+                    <select id="bloodtype" value={fields.bloodtype}
+                        onChange={(e) => onChange('bloodtype', e.target.value)}
+                        className={selectCls}>
+                        <option value="">Unknown</option>
+                        {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bt) => (
+                            <option key={bt} value={bt}>{bt}</option>
+                        ))}
+                    </select>
+                </Field>
+            </div>
+
+            <Field id="password" label="Password">
+                <input id="password" type="password" value={fields.password}
+                    onChange={(e) => onChange('password', e.target.value)}
+                    className={inputCls} minLength={8} maxLength={128} required />
+            </Field>
+
+            <Field id="confirmPassword" label="Confirm password">
+                <input id="confirmPassword" type="password" value={fields.confirmPassword}
+                    onChange={(e) => onChange('confirmPassword', e.target.value)}
+                    className={inputCls} minLength={8} maxLength={128} required />
+            </Field>
+
+            {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">{error}</p>}
+
+            <button type="submit"
+                className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-60 ${isDoctor
+                        ? 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-zinc-900 hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
+                    }`}>
+                {isDoctor ? 'Continue to doctor details →' : 'Create account'}
+            </button>
+        </form>
+    );
+}
+
+// ── Step 2 ────────────────────────────────────────────────────────────────────
+
+function StepTwo({
+    fields,
+    onChange,
+    error,
+    isSubmitting,
+    onBack,
+    onSubmit,
+}: {
+    fields: DoctorFields;
+    onChange: (key: keyof DoctorFields, value: string) => void;
+    error: string;
+    isSubmitting: boolean;
+    onBack: () => void;
+    onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+}) {
+    return (
+        <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+            {/* Header */}
+            <div className="space-y-1 pb-1">
+                <div className="mb-3 flex items-center gap-2">
+                    <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                        Doctor registration
+                    </span>
+                    <span className="text-xs text-zinc-400">Step 2 of 2</span>
+                </div>
+                <h1 className="text-xl font-semibold">Doctor details</h1>
+                <p className="text-sm text-zinc-500">
+                    Your BMDC number will be manually verified by an admin before doctor-level
+                    access is granted.
+                </p>
+            </div>
+
+            {/* Approval notice */}
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                After submitting, your account will be <strong>pending approval</strong>. You can
+                log in but doctor features will unlock once an admin verifies your registration.
+            </div>
+
+            <Field id="registrationnumber" label="BMDC Registration Number *">
+                <input id="registrationnumber" type="text" value={fields.registrationnumber}
+                    onChange={(e) => onChange('registrationnumber', e.target.value)}
+                    className={inputCls} placeholder="e.g. A-12345" maxLength={50} required />
+            </Field>
+
+            <Field id="designation" label="Designation (optional)">
+                <input id="designation" type="text" value={fields.designation}
+                    onChange={(e) => onChange('designation', e.target.value)}
+                    className={inputCls} placeholder="e.g. Cardiologist" maxLength={100} />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+                <Field id="startpracticedate" label="Practice start date (optional)">
+                    <input id="startpracticedate" type="date" value={fields.startpracticedate}
+                        onChange={(e) => onChange('startpracticedate', e.target.value)}
+                        className={inputCls} />
+                </Field>
+                <Field id="registrationexpiry" label="Registration expiry (optional)">
+                    <input id="registrationexpiry" type="date" value={fields.registrationexpiry}
+                        onChange={(e) => onChange('registrationexpiry', e.target.value)}
+                        className={inputCls} />
+                </Field>
+            </div>
+
+            {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">{error}</p>}
+
+            <div className="flex gap-3">
+                <button type="button" onClick={onBack} disabled={isSubmitting}
+                    className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800">
+                    ← Back
+                </button>
+                <button type="submit" disabled={isSubmitting}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60">
+                    {isSubmitting ? 'Submitting…' : 'Submit registration'}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+// ── Root export ───────────────────────────────────────────────────────────────
+
+export default function RegisterForm({ isDoctor }: { isDoctor: boolean }) {
     const router = useRouter();
 
-    const [username, setUsername] = useState('');
-    const [firstname, setFirstname] = useState('');
-    const [lastname, setLastname] = useState('');
-    const [email, setEmail] = useState('');
-    const [dateofbirth, setDateofbirth] = useState('');
-    const [sex, setSex] = useState<string>('');
-    const [bloodtype, setBloodtype] = useState<string>('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [step, setStep] = useState<1 | 2>(1);
+
+    const [basic, setBasic] = useState<BasicFields>({
+        username: '', firstname: '', lastname: '', email: '',
+        dateofbirth: '', sex: '', bloodtype: '', password: '', confirmPassword: '',
+    });
+
+    const [doctor, setDoctor] = useState<DoctorFields>({
+        registrationnumber: '', designation: '', startpracticedate: '', registrationexpiry: '',
+    });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
-    async function onSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        setErrorMessage('');
+    function handleBasicChange(key: keyof BasicFields, value: string) {
+        setBasic((prev) => ({ ...prev, [key]: value }));
+    }
 
-        if (password !== confirmPassword) {
+    function handleDoctorChange(key: keyof DoctorFields, value: string) {
+        setDoctor((prev) => ({ ...prev, [key]: value }));
+    }
+
+    function handleStep1Submit(e: FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setErrorMessage('');
+        if (basic.password !== basic.confirmPassword) {
             setErrorMessage('Passwords do not match.');
             return;
         }
+        if (isDoctor) {
+            setStep(2);
+        } else {
+            void submitRegistration();
+        }
+    }
 
+    function handleStep2Submit(e: FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        void submitRegistration();
+    }
+
+    async function submitRegistration() {
+        setErrorMessage('');
         setIsSubmitting(true);
-
         try {
-            const response = await fetch('/api/auth/register', {
+            const body = {
+                username: basic.username.trim(),
+                firstname: basic.firstname.trim(),
+                lastname: basic.lastname.trim(),
+                email: basic.email.trim().toLowerCase(),
+                dateofbirth: basic.dateofbirth,
+                sex: basic.sex || null,
+                bloodtype: basic.bloodtype || null,
+                password: basic.password,
+                ...(isDoctor && {
+                    registrationnumber: doctor.registrationnumber.trim(),
+                    designation: doctor.designation.trim() || null,
+                    startpracticedate: doctor.startpracticedate || null,
+                    registrationexpiry: doctor.registrationexpiry || null,
+                }),
+            };
+
+            const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: username.trim(),
-                    firstname: firstname.trim(),
-                    lastname: lastname.trim(),
-                    email: email.trim().toLowerCase(),
-                    dateofbirth, // YYYY-MM-DD from input[type="date"]
-                    sex: sex || null,
-                    bloodtype: bloodtype || null,
-                    password,
-                    role: 'User',
-                }),
+                body: JSON.stringify(body),
             });
 
-            if (!response.ok) {
-                const error = (await response.json()) as ApiError;
-                setErrorMessage(error.message ?? 'Registration failed');
+            if (!res.ok) {
+                const err = (await res.json()) as ApiError;
+                setErrorMessage(err.message ?? 'Registration failed');
                 return;
             }
 
-            router.push('/dashboard');
+            router.push(isDoctor ? '/doctor/pending' : '/dashboard');
             router.refresh();
         } catch {
             setErrorMessage('Unexpected error. Please try again.');
@@ -66,150 +325,26 @@ export default function RegisterForm() {
         }
     }
 
+    if (step === 2 && isDoctor) {
+        return (
+            <StepTwo
+                fields={doctor}
+                onChange={handleDoctorChange}
+                error={errorMessage}
+                isSubmitting={isSubmitting}
+                onBack={() => { setErrorMessage(''); setStep(1); }}
+                onSubmit={handleStep2Submit}
+            />
+        );
+    }
+
     return (
-        <form onSubmit={onSubmit} className="space-y-4 rounded-lg border p-6">
-            <h1 className="text-xl font-semibold">Create account</h1>
-
-            <div className="space-y-1">
-                <label htmlFor="username" className="text-sm font-medium">Username</label>
-                <input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    minLength={3}
-                    maxLength={50}
-                    required
-                />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                    <label htmlFor="firstname" className="text-sm font-medium">First name</label>
-                    <input
-                        id="firstname"
-                        type="text"
-                        value={firstname}
-                        onChange={(e) => setFirstname(e.target.value)}
-                        className="w-full rounded-md border px-3 py-2"
-                        maxLength={50}
-                        required
-                    />
-                </div>
-
-                <div className="space-y-1">
-                    <label htmlFor="lastname" className="text-sm font-medium">Last name</label>
-                    <input
-                        id="lastname"
-                        type="text"
-                        value={lastname}
-                        onChange={(e) => setLastname(e.target.value)}
-                        className="w-full rounded-md border px-3 py-2"
-                        maxLength={50}
-                        required
-                    />
-                </div>
-            </div>
-
-            <div className="space-y-1">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    required
-                />
-            </div>
-
-            <div className="space-y-1">
-                <label htmlFor="dateofbirth" className="text-sm font-medium">Date of birth</label>
-                <input
-                    id="dateofbirth"
-                    type="date"
-                    value={dateofbirth}
-                    onChange={(e) => setDateofbirth(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    required
-                />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                    <label htmlFor="sex" className="text-sm font-medium">Sex</label>
-                    <select
-                        id="sex"
-                        value={sex}
-                        onChange={(e) => setSex(e.target.value)}
-                        className="w-full rounded-md border px-3 py-2"
-                    >
-                        <option value="">Prefer not to say</option>
-                        <option value="M">Male</option>
-                        <option value="F">Female</option>
-                        <option value="O">Other</option>
-                    </select>
-                </div>
-
-                <div className="space-y-1">
-                    <label htmlFor="bloodtype" className="text-sm font-medium">Blood type</label>
-                    <select
-                        id="bloodtype"
-                        value={bloodtype}
-                        onChange={(e) => setBloodtype(e.target.value)}
-                        className="w-full rounded-md border px-3 py-2"
-                    >
-                        <option value="">Unknown</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="space-y-1">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    minLength={8}
-                    maxLength={128}
-                    required
-                />
-            </div>
-
-            <div className="space-y-1">
-                <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm password</label>
-                <input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    minLength={8}
-                    maxLength={128}
-                    required
-                />
-            </div>
-
-            {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
-
-            <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full rounded-md bg-black px-4 py-2 text-white disabled:opacity-60"
-            >
-                {isSubmitting ? 'Creating account...' : 'Create account'}
-            </button>
-        </form>
+        <StepOne
+            isDoctor={isDoctor}
+            fields={basic}
+            onChange={handleBasicChange}
+            error={errorMessage}
+            onSubmit={handleStep1Submit}
+        />
     );
 }

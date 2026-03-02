@@ -55,8 +55,11 @@ CREATE TABLE Doctors (
     RegistrationNumber VARCHAR(50) UNIQUE NOT NULL,
     StartPracticeDate DATE,
     RegistrationExpiry DATE,
-    ApprovalStatus Varchar(20) check (ApprovalStatus in ('Pending','Approved','Rejected')) default 'Pending';
-    FOREIGN KEY (DoctorId) REFERENCES Users(UserId)
+    ApprovalStatus VARCHAR(20) CHECK (ApprovalStatus IN ('Pending', 'Approved', 'Rejected')) NOT NULL DEFAULT 'Pending',
+    ReviewedBy INT,
+    ReviewedAt TIMESTAMP,
+    FOREIGN KEY (DoctorId) REFERENCES Users(UserId),
+    FOREIGN KEY (ReviewedBy) REFERENCES Users(UserId)
 );
 
 --- Specialization table ---
@@ -203,3 +206,19 @@ CREATE TABLE Prescribed_test (
     FOREIGN KEY (TestId) REFERENCES TESTS(TestID),
     ForeIGN KEY (PrescriptionID) REFERENCES prescription(prescriptionID)
 );
+
+-- ── Migration: run these if the Doctors table already exists in your DB ───────
+-- The original DDL had a semicolon bug that dropped the FK and missing columns.
+-- These statements bring an existing Doctors table up to date.
+
+-- 1. Add the missing FK (skip if it already exists — check pg_constraint first)
+-- ALTER TABLE Doctors ADD CONSTRAINT doctors_doctorid_fkey
+--     FOREIGN KEY (DoctorId) REFERENCES Users(UserId);
+
+-- 2. Add review audit columns
+-- ALTER TABLE Doctors ADD COLUMN IF NOT EXISTS ReviewedBy INT REFERENCES Users(UserId);
+-- ALTER TABLE Doctors ADD COLUMN IF NOT EXISTS ReviewedAt TIMESTAMP;
+
+-- 3. Tighten ApprovalStatus to NOT NULL (safe only after backfilling any NULLs)
+-- UPDATE Doctors SET ApprovalStatus = 'Pending' WHERE ApprovalStatus IS NULL;
+-- ALTER TABLE Doctors ALTER COLUMN ApprovalStatus SET NOT NULL;

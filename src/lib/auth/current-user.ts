@@ -9,6 +9,8 @@ export type CurrentUser = {
   id: string;
   email: string;
   name: string;
+  role: string;               // 'Admin' | 'Doctor' | 'User'
+  doctorStatus?: string;      // only set when role === 'Doctor'
 };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -28,5 +30,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: payload.sub,
     email: payload.email,
     name: payload.name,
+    role: payload.role,
+    doctorStatus: payload.doctorStatus,
   };
 }
