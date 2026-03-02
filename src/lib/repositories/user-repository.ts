@@ -32,7 +32,7 @@ export async function ensureUsersTable(): Promise<void> {
         Sex CHAR(1) CHECK (Sex IN ('M', 'F', 'O')),
         BloodType VARCHAR(3) CHECK (BloodType IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
         Password VARCHAR(255) NOT NULL,
-        Role VARCHAR(20) CHECK (Role IN ('Admin', 'User', 'Guest')) NOT NULL,
+        Role VARCHAR(20) CHECK (Role IN ('Admin', 'User', 'Doctor')) NOT NULL,
         LocationId INT,
         FOREIGN KEY (LocationId) REFERENCES Locations(LocationId)
     )
