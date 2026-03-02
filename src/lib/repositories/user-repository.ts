@@ -21,7 +21,7 @@ export type DoctorInfo = {
     registrationnumber: string;
     startpracticedate: string | null;
     registrationexpiry: string | null;
-    approvalstatus: string;   // 'Pending' | 'Approved' | 'Rejected'
+    approvalstatus: 'Approved' | 'Pending' | 'Rejected';   // 'Pending' | 'Approved' | 'Rejected'
     reviewedby: number | null;
     reviewedat: string | null;
 };

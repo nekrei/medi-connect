@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         role,
     });
 
-    let doctorStatus: string | undefined;
+    let doctorStatus: 'Approved' | 'Pending' | 'Rejected' | undefined;
 
     if (isDoctor) {
         const doctor = await createDoctor({
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
             startpracticedate: data.startpracticedate ?? null,
             registrationexpiry: data.registrationexpiry ?? null,
         });
-        doctorStatus = doctor.approvalstatus; // 'Pending'
+        doctorStatus = doctor.approvalstatus;
     }
 
     const token = await createSessionToken({

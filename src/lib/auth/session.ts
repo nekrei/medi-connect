@@ -8,8 +8,8 @@ export type SessionPayload = JWTPayload & {
   sub: string;
   email: string;
   name: string;
-  role: string;               // 'Admin' | 'Doctor' | 'User'
-  doctorStatus?: string;      // 'Pending' | 'Approved' | 'Rejected' — only set for Doctor role
+  role: 'Admin' | 'Doctor' | 'User';
+  doctorStatus?: 'Approved' | 'Pending' | 'Rejected';      // only set for Doctor role
 };
 
 const secret = new TextEncoder().encode(env.AUTH_SECRET);

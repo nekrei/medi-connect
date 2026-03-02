@@ -9,8 +9,8 @@ export type CurrentUser = {
   id: string;
   email: string;
   name: string;
-  role: string;               // 'Admin' | 'Doctor' | 'User'
-  doctorStatus?: string;      // only set when role === 'Doctor'
+  role: 'Admin' | 'Doctor' | 'User';
+  doctorStatus?: 'Approved' | 'Pending' | 'Rejected';     
 };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
