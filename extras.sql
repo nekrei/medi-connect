@@ -43,7 +43,7 @@ BEGIN
         coalesce(holdingnumber || ', ' , '') ||
         coalesce(road || ', ' , '') ||
         coalesce(thananame || ', ' , '') ||
-        coalesce(districtname || ', ' , '') ||
+        coalesce(districtname || '-' , '') ||
         coalesce(postalcode, '')
         ) into addr
     FROM (Locations L JOIN thanas T on L.thanaid = T.thanaid) JOIN districts d on T.districtid = d.districtid
