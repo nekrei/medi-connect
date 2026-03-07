@@ -57,8 +57,7 @@ export default function LocationMap({ base, details }: MapProps) {
           Lat: ${base.lat.toFixed(4)}<br/>
           Lng: ${base.lng.toFixed(4)}
         </div>`
-      )
-      .openPopup();
+      );
 
     // Add accuracy circle
     L.circle([base.lat, base.lng], {
@@ -88,7 +87,8 @@ export default function LocationMap({ base, details }: MapProps) {
               <strong>${c.name}</strong><br/>
               ${c.address}
             </div>`
-          );
+          )
+          .openPopup();
         return marker;
       });
     }

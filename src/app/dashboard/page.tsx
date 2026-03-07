@@ -9,7 +9,7 @@ export default async function DashboardPage() {
     if (!user) {
         redirect('/login');
     }
-
+    
     return (
         <div className="mx-auto max-w-2xl px-4 py-10">
             <div className="space-y-4 rounded-lg border p-6">
