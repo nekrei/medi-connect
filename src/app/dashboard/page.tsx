@@ -7,6 +7,7 @@ import {
     ChevronRight,
     Activity
 } from 'lucide-react';
+import Link from 'next/link';
 
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { redirect } from 'next/navigation';
@@ -42,7 +43,7 @@ const ActionCard = ({ title, description, icon, colorClass, href }: ActionCardPr
 const MedicalDashboard = async () => {
     const user = await getCurrentUser();
 
-    if(!user) {
+    if (!user) {
         redirect('/login');
     }
 
@@ -76,7 +77,7 @@ const MedicalDashboard = async () => {
 
                 {/* Header */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-                    <div>   
+                    <div>
                         <h1 className="text-3xl font-extrabold text-slate-900">Welcome back, {userName}</h1>
                         <p className="text-slate-500 mt-1">Your health overview is up to date.</p>
                     </div>
@@ -86,7 +87,7 @@ const MedicalDashboard = async () => {
                             <Bell size={20} />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                         </button>
-                        <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+                        <Link href="/profile" className="flex items-center gap-3 pl-3 border-l border-slate-200">
                             <div className="text-right hidden sm:block">
                                 <p className="text-sm font-bold text-slate-800 leading-none">{userName}</p>
                                 <p className="text-xs text-slate-500 mt-1">Patient ID: #4492</p>
@@ -94,7 +95,7 @@ const MedicalDashboard = async () => {
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                                 <User size={20} />
                             </div>
-                        </div>
+                        </Link>
                     </div>
                 </header>
 

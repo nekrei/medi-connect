@@ -5,6 +5,7 @@ import { SESSION_COOKIE_NAME, sessionCookieOptions } from '@/lib/auth/cookie';
 import { hashPassword } from '@/lib/auth/password';
 import { createSessionToken } from '@/lib/auth/session';
 import {
+    createPhoneNumber,
     createDoctor,
     createUser,
     ensureUsersTable,
@@ -16,6 +17,7 @@ const registerSchema = z.object({
     firstname: z.string().min(1).max(50).trim(),
     lastname: z.string().min(1).max(50).trim(),
     email: z.string().email().transform((value) => value.toLowerCase().trim()),
+    phonenumber: z.string().min(7).max(15).trim(),
     dateofbirth: z.string(),
     sex: z.string().nullable(),
     bloodtype: z.string().nullable(),
@@ -64,6 +66,11 @@ export async function POST(request: Request) {
         bloodtype: data.bloodtype,
         password: passwordHash,
         role,
+    });
+
+    await createPhoneNumber({
+        userid: user.userid,
+        phonenumber: data.phonenumber,
     });
 
     let doctorStatus: 'Approved' | 'Pending' | 'Rejected' | undefined;
