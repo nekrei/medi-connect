@@ -308,10 +308,6 @@ export async function fetchDoctorProfileInfo(userId: number): Promise<DoctorProf
 }
 
 export type BasicProfileUpdateInput = {
-    email: string;
-    dateofbirth: string;
-    sex: 'M' | 'F' | 'O' | null;
-    bloodtype: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | null;
     propertyname: string | null;
     holdingnumber: string | null;
     road: string | null;
@@ -321,15 +317,10 @@ export type BasicProfileUpdateInput = {
 };
 
 export type ContactProfileUpdateInput = {
-    email: string;
     phonenumbers: string[];
 };
 
 export type DoctorProfileUpdateInput = {
-    designation: string | null;
-    registrationnumber: string | null;
-    startpracticedate: string | null;
-    registrationexpiry: string | null;
     specializations: string[];
 };
 
@@ -351,16 +342,6 @@ async function resolveThanaId(input: { districtname: string | null; thananame: s
 }
 
 export async function updateBasicProfileInfo(userId: number, input: BasicProfileUpdateInput): Promise<void> {
-    await sql`
-        UPDATE users
-        SET
-            email = ${input.email},
-            dateofbirth = ${input.dateofbirth},
-            sex = ${input.sex},
-            bloodtype = ${input.bloodtype}
-        WHERE userid = ${userId}
-    `;
-
     const userRows = (await sql`
         SELECT locationid
         FROM users
@@ -408,12 +389,6 @@ export async function updateBasicProfileInfo(userId: number, input: BasicProfile
 
 export async function updateContactProfileInfo(userId: number, input: ContactProfileUpdateInput): Promise<void> {
     await sql`
-        UPDATE users
-        SET email = ${input.email}
-        WHERE userid = ${userId}
-    `;
-
-    await sql`
         DELETE FROM phonenumbers
         WHERE userid = ${userId}
     `;
@@ -429,16 +404,6 @@ export async function updateContactProfileInfo(userId: number, input: ContactPro
 }
 
 export async function updateDoctorProfileInfo(userId: number, input: DoctorProfileUpdateInput): Promise<void> {
-    await sql`
-        UPDATE doctors
-        SET
-            designation = ${input.designation},
-            registrationnumber = ${input.registrationnumber},
-            startpracticedate = ${input.startpracticedate},
-            registrationexpiry = ${input.registrationexpiry}
-        WHERE doctorid = ${userId}
-    `;
-
     await sql`
         DELETE FROM doctorspecializations
         WHERE doctorid = ${userId}

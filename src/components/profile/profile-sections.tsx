@@ -38,10 +38,6 @@ type SavePayload =
     | {
         section: 'basic';
         data: {
-            email: string;
-            dateofbirth: string;
-            sex: string | null;
-            bloodtype: string | null;
             propertyname: string | null;
             holdingnumber: string | null;
             road: string | null;
@@ -53,17 +49,12 @@ type SavePayload =
     | {
         section: 'contact';
         data: {
-            email: string;
             phonenumbers: string[];
         };
     }
     | {
         section: 'doctor';
         data: {
-            designation: string | null;
-            registrationnumber: string | null;
-            startpracticedate: string | null;
-            registrationexpiry: string | null;
             specializations: string[];
         };
     };
@@ -231,10 +222,6 @@ function FloatingEditModal({
     }, [activeSection, basicInfo, contactInfo, doctorDetails]);
 
     const [basicForm, setBasicForm] = useState({
-        email: basicInfo.email ?? '',
-        dateofbirth: basicInfo.dateofbirth ?? '',
-        sex: basicInfo.sex ?? '',
-        bloodtype: basicInfo.bloodtype ?? '',
         propertyname: basicInfo.propertyname ?? '',
         holdingnumber: basicInfo.holdingnumber ?? '',
         road: basicInfo.road ?? '',
@@ -249,15 +236,10 @@ function FloatingEditModal({
     const [saveError, setSaveError] = useState<string | null>(null);
 
     const [contactForm, setContactForm] = useState({
-        email: contactInfo?.email ?? basicInfo.email ?? '',
         phonenumbers: (contactInfo?.phonenumbers ?? []).join(', '),
     });
 
     const [doctorForm, setDoctorForm] = useState({
-        designation: doctorDetails.designation ?? '',
-        registrationnumber: doctorDetails.registrationnumber ?? '',
-        startpracticedate: doctorDetails.startpracticedate ?? '',
-        registrationexpiry: doctorDetails.registrationexpiry ?? '',
         specializations: doctorDetails.specializations.join(', '),
     });
 
@@ -321,10 +303,6 @@ function FloatingEditModal({
                 await onSave({
                     section: 'basic',
                     data: {
-                        email: basicForm.email.trim(),
-                        dateofbirth: basicForm.dateofbirth,
-                        sex: basicForm.sex || null,
-                        bloodtype: basicForm.bloodtype || null,
                         propertyname: basicForm.propertyname.trim() || null,
                         holdingnumber: basicForm.holdingnumber.trim() || null,
                         road: basicForm.road.trim() || null,
@@ -340,7 +318,6 @@ function FloatingEditModal({
                 await onSave({
                     section: 'contact',
                     data: {
-                        email: contactForm.email.trim(),
                         phonenumbers: contactForm.phonenumbers
                             .split(',')
                             .map((value) => value.trim())
@@ -353,10 +330,6 @@ function FloatingEditModal({
             await onSave({
                 section: 'doctor',
                 data: {
-                    designation: doctorForm.designation.trim() || null,
-                    registrationnumber: doctorForm.registrationnumber.trim() || null,
-                    startpracticedate: doctorForm.startpracticedate.trim() || null,
-                    registrationexpiry: doctorForm.registrationexpiry.trim() || null,
                     specializations: doctorForm.specializations
                         .split(',')
                         .map((value) => value.trim())
@@ -404,9 +377,9 @@ function FloatingEditModal({
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Email</span>
                                 <input
                                     type="email"
-                                    value={basicForm.email}
-                                    onChange={(event) => setBasicForm((prev) => ({ ...prev, email: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={basicInfo.email}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 />
                             </label>
 
@@ -414,18 +387,18 @@ function FloatingEditModal({
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Date of Birth</span>
                                 <input
                                     type="date"
-                                    value={basicForm.dateofbirth}
-                                    onChange={(event) => setBasicForm((prev) => ({ ...prev, dateofbirth: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={basicInfo.dateofbirth}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 />
                             </label>
 
                             <label className="block">
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Sex</span>
                                 <select
-                                    value={basicForm.sex}
-                                    onChange={(event) => setBasicForm((prev) => ({ ...prev, sex: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={basicInfo.sex ?? ''}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 >
                                     <option value="">Select sex</option>
                                     {SEX_OPTIONS.map((option) => (
@@ -439,9 +412,9 @@ function FloatingEditModal({
                             <label className="block">
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Blood Group</span>
                                 <select
-                                    value={basicForm.bloodtype}
-                                    onChange={(event) => setBasicForm((prev) => ({ ...prev, bloodtype: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={basicInfo.bloodtype ?? ''}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 >
                                     <option value="">Select blood group</option>
                                     {BLOOD_GROUP_OPTIONS.map((group) => (
@@ -570,9 +543,9 @@ function FloatingEditModal({
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Email</span>
                                 <input
                                     type="email"
-                                    value={contactForm.email}
-                                    onChange={(event) => setContactForm((prev) => ({ ...prev, email: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={contactInfo?.email ?? basicInfo.email}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 />
                             </label>
 
@@ -593,9 +566,9 @@ function FloatingEditModal({
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Designation</span>
                                 <input
                                     type="text"
-                                    value={doctorForm.designation}
-                                    onChange={(event) => setDoctorForm((prev) => ({ ...prev, designation: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={doctorDetails.designation ?? ''}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 />
                             </label>
 
@@ -603,9 +576,9 @@ function FloatingEditModal({
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Registration No.</span>
                                 <input
                                     type="text"
-                                    value={doctorForm.registrationnumber}
-                                    onChange={(event) => setDoctorForm((prev) => ({ ...prev, registrationnumber: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={doctorDetails.registrationnumber ?? ''}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 />
                             </label>
 
@@ -613,9 +586,9 @@ function FloatingEditModal({
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Practice Start</span>
                                 <input
                                     type="date"
-                                    value={doctorForm.startpracticedate}
-                                    onChange={(event) => setDoctorForm((prev) => ({ ...prev, startpracticedate: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={doctorDetails.startpracticedate ?? ''}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 />
                             </label>
 
@@ -623,9 +596,9 @@ function FloatingEditModal({
                                 <span className="mb-1 block text-sm font-medium text-slate-700">Registration Expiry</span>
                                 <input
                                     type="date"
-                                    value={doctorForm.registrationexpiry}
-                                    onChange={(event) => setDoctorForm((prev) => ({ ...prev, registrationexpiry: event.target.value }))}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                    value={doctorDetails.registrationexpiry ?? ''}
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600"
                                 />
                             </label>
 

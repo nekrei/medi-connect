@@ -9,10 +9,6 @@ import {
 } from '@/lib/repositories/user-repository';
 
 const basicSchema = z.object({
-    email: z.string().email(),
-    dateofbirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    sex: z.enum(['M', 'F', 'O']).or(z.literal('')).nullable().transform((value) => value || null),
-    bloodtype: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).or(z.literal('')).nullable().transform((value) => value || null),
     propertyname: z.string().nullable().transform((value) => value?.trim() || null),
     holdingnumber: z.string().nullable().transform((value) => value?.trim() || null),
     road: z.string().nullable().transform((value) => value?.trim() || null),
@@ -22,15 +18,10 @@ const basicSchema = z.object({
 });
 
 const contactSchema = z.object({
-    email: z.string().email(),
     phonenumbers: z.array(z.string().trim()).max(10),
 });
 
 const doctorSchema = z.object({
-    designation: z.string().nullable().transform((value) => value?.trim() || null),
-    registrationnumber: z.string().nullable().transform((value) => value?.trim() || null),
-    startpracticedate: z.string().nullable().transform((value) => value?.trim() || null),
-    registrationexpiry: z.string().nullable().transform((value) => value?.trim() || null),
     specializations: z.array(z.string().trim()).max(20),
 });
 
