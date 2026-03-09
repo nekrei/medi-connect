@@ -223,7 +223,7 @@ export async function fetchBasicUserInfo(userId: number): Promise<BasicUserProfi
             l.road,
             t.thananame,
             d.districtname,
-            t.postalcode,
+            NULL::varchar AS postalcode,
             l.latitude,
             l.longitude
         FROM users u
@@ -305,4 +305,170 @@ export async function fetchDoctorProfileInfo(userId: number): Promise<DoctorProf
             .map((row) => row.specializationname)
             .filter((name): name is string => Boolean(name)),
     };
+}
+
+export type BasicProfileUpdateInput = {
+    email: string;
+    dateofbirth: string;
+    sex: 'M' | 'F' | 'O' | null;
+    bloodtype: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | null;
+    propertyname: string | null;
+    holdingnumber: string | null;
+    road: string | null;
+    districtname: string | null;
+    thananame: string | null;
+    postalcode: string | null;
+};
+
+export type ContactProfileUpdateInput = {
+    email: string;
+    phonenumbers: string[];
+};
+
+export type DoctorProfileUpdateInput = {
+    designation: string | null;
+    registrationnumber: string | null;
+    startpracticedate: string | null;
+    registrationexpiry: string | null;
+    specializations: string[];
+};
+
+async function resolveThanaId(input: { districtname: string | null; thananame: string | null }): Promise<number | null> {
+    if (!input.districtname || !input.thananame) {
+        return null;
+    }
+
+    const rows = (await sql`
+        SELECT t.thanaid
+        FROM thanas t
+        JOIN districts d ON d.districtid = t.districtid
+        WHERE lower(d.districtname) = lower(${input.districtname})
+          AND lower(t.thananame) = lower(${input.thananame})
+        LIMIT 1
+    `) as Array<{ thanaid: number }>;
+
+    return rows[0]?.thanaid ?? null;
+}
+
+export async function updateBasicProfileInfo(userId: number, input: BasicProfileUpdateInput): Promise<void> {
+    await sql`
+        UPDATE users
+        SET
+            email = ${input.email},
+            dateofbirth = ${input.dateofbirth},
+            sex = ${input.sex},
+            bloodtype = ${input.bloodtype}
+        WHERE userid = ${userId}
+    `;
+
+    const userRows = (await sql`
+        SELECT locationid
+        FROM users
+        WHERE userid = ${userId}
+        LIMIT 1
+    `) as Array<{ locationid: number | null }>;
+
+    const locationId = userRows[0]?.locationid ?? null;
+    const thanaId = await resolveThanaId({ districtname: input.districtname, thananame: input.thananame });
+
+    if (locationId) {
+        await sql`
+            UPDATE locations
+            SET
+                propertyname = ${input.propertyname},
+                holdingnumber = ${input.holdingnumber},
+                road = ${input.road},
+                thanaid = COALESCE(${thanaId}, thanaid)
+            WHERE locationid = ${locationId}
+        `;
+        return;
+    }
+
+    if (!thanaId) {
+        return;
+    }
+
+    const rows = (await sql`
+        INSERT INTO locations (propertyname, holdingnumber, road, thanaid)
+        VALUES (${input.propertyname}, ${input.holdingnumber}, ${input.road}, ${thanaId})
+        RETURNING locationid
+    `) as Array<{ locationid: number }>;
+
+    const insertedLocationId = rows[0]?.locationid;
+    if (!insertedLocationId) {
+        return;
+    }
+
+    await sql`
+        UPDATE users
+        SET locationid = ${insertedLocationId}
+        WHERE userid = ${userId}
+    `;
+}
+
+export async function updateContactProfileInfo(userId: number, input: ContactProfileUpdateInput): Promise<void> {
+    await sql`
+        UPDATE users
+        SET email = ${input.email}
+        WHERE userid = ${userId}
+    `;
+
+    await sql`
+        DELETE FROM phonenumbers
+        WHERE userid = ${userId}
+    `;
+
+    const normalizedPhones = Array.from(new Set(input.phonenumbers.map((phone) => phone.trim()).filter(Boolean)));
+
+    for (const phone of normalizedPhones) {
+        await sql`
+            INSERT INTO phonenumbers (userid, phonenumber)
+            VALUES (${userId}, ${phone})
+        `;
+    }
+}
+
+export async function updateDoctorProfileInfo(userId: number, input: DoctorProfileUpdateInput): Promise<void> {
+    await sql`
+        UPDATE doctors
+        SET
+            designation = ${input.designation},
+            registrationnumber = ${input.registrationnumber},
+            startpracticedate = ${input.startpracticedate},
+            registrationexpiry = ${input.registrationexpiry}
+        WHERE doctorid = ${userId}
+    `;
+
+    await sql`
+        DELETE FROM doctorspecializations
+        WHERE doctorid = ${userId}
+    `;
+
+    const uniqueSpecializations = Array.from(new Set(input.specializations.map((name) => name.trim()).filter(Boolean)));
+
+    for (const specialization of uniqueSpecializations) {
+        await sql`
+            INSERT INTO specializations (specializationname)
+            VALUES (${specialization})
+            ON CONFLICT (specializationname) DO NOTHING
+        `;
+
+        const rows = (await sql`
+            SELECT specializationid
+            FROM specializations
+            WHERE lower(specializationname) = lower(${specialization})
+            LIMIT 1
+        `) as Array<{ specializationid: number }>;
+
+        const specializationId = rows[0]?.specializationid;
+        if (!specializationId) {
+            continue;
+        }
+
+        await sql`
+            INSERT INTO doctorspecializations (doctorid, specializationid)
+            VALUES (${userId}, ${specializationId})
+            ON CONFLICT (doctorid, specializationid) DO NOTHING
+        `;
+    }
 }
