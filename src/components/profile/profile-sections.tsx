@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Phone, ShieldCheck, Stethoscope, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { DIVISION_DISTRICTS } from '@/lib/constants/divisions_districts';
 
 type BasicInfo = {
     email: string;
@@ -74,32 +75,8 @@ type LocationOptionRow = {
 const BLOOD_GROUP_OPTIONS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
 const SEX_OPTIONS = ['M', 'F', 'O'] as const;
 
-const DIVISION_DISTRICTS: Record<string, string[]> = {
-    Dhaka: [
-        'Dhaka',
-        'Gazipur',
-        'Narayanganj',
-        'Kishoreganj',
-        'Manikganj',
-        'Munshiganj',
-        'Narsingdi',
-        'Tangail',
-        'Faridpur',
-        'Gopalganj',
-        'Madaripur',
-        'Rajbari',
-        'Shariatpur',
-    ],
-    Chattogram: ['Chattogram', 'Cox\'s Bazar', 'Comilla', 'Feni', 'Brahmanbaria', 'Noakhali', 'Lakshmipur', 'Rangamati', 'Khagrachari', 'Bandarban', 'Chandpur'],
-    Khulna: ['Khulna', 'Bagerhat', 'Satkhira', 'Jessore', 'Jhenaidah', 'Narail', 'Magura', 'Kushtia', 'Chuadanga', 'Meherpur'],
-    Rajshahi: ['Rajshahi', 'Natore', 'Naogaon', 'Chapainawabganj', 'Pabna', 'Bogura', 'Joypurhat', 'Sirajganj'],
-    Barishal: ['Barishal', 'Barguna', 'Bhola', 'Jhalokati', 'Patuakhali', 'Pirojpur'],
-    Sylhet: ['Sylhet', 'Moulvibazar', 'Habiganj', 'Sunamganj'],
-    Rangpur: ['Rangpur', 'Dinajpur', 'Kurigram', 'Gaibandha', 'Lalmonirhat', 'Nilphamari', 'Panchagarh', 'Thakurgaon'],
-    Mymensingh: ['Mymensingh', 'Jamalpur', 'Netrokona', 'Sherpur'],
-};
 
-const DIVISION_NAMES = Object.keys(DIVISION_DISTRICTS);
+const DIVISION_NAMES = Object.keys(DIVISION_DISTRICTS) as Array<keyof typeof DIVISION_DISTRICTS>;
 
 function normalizeDistrictName(name: string): string {
     return name.trim().toLowerCase();
@@ -279,7 +256,7 @@ function FloatingEditModal({
         if (!selectedDivision) {
             return [];
         }
-        return DIVISION_DISTRICTS[selectedDivision] ?? [];
+        return DIVISION_DISTRICTS[selectedDivision as keyof typeof DIVISION_DISTRICTS] ?? [];
     }, [selectedDivision]);
 
     const thanaOptions = useMemo(() => {

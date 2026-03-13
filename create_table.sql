@@ -96,8 +96,6 @@ CREATE TABLE Chambers (
     DoctorId INT NOT NULL,
     HospitalId INT NOT NULL,
     UNIQUE(DoctorId, HospitalId),
-    CheckupStartTime TIME NOT NULL,
-    CheckupEndTime TIME NOT NULL,
     CheckupPrice DECIMAL(10, 2),
     AppointmentContact VARCHAR(15),
     FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId),
@@ -206,6 +204,21 @@ CREATE TABLE Prescribed_test (
     FOREIGN KEY (TestId) REFERENCES TESTS(TestID),
     ForeIGN KEY (PrescriptionID) REFERENCES prescription(prescriptionID)
 );
+
+-- chamber schedule
+-- 0 = Sunday, 1 = Monday, ... 6 = Saturday
+CREATE TABLE IF NOT EXISTS DoctorChamberSchedules (
+    ScheduleId SERIAL PRIMARY KEY,
+    ChamberId INT NOT NULL REFERENCES Chambers(ChamberId) ON DELETE CASCADE,
+    Weekday SMALLINT NOT NULL CHECK (Weekday BETWEEN 0 AND 6),
+    StartTime TIME NOT NULL,
+    EndTime TIME NOT NULL,
+    IsActive BOOLEAN NOT NULL DEFAULT TRUE,
+    CHECK (StartTime < EndTime),
+    UNIQUE (ChamberId, Weekday)
+);
+
+
 
 -- ── Migration: run these if the Doctors table already exists in your DB ───────
 -- The original DDL had a semicolon bug that dropped the FK and missing columns.

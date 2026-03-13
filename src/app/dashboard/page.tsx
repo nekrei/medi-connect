@@ -5,7 +5,6 @@ import {
     Bell,
     User,
     ChevronRight,
-    Activity
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -51,26 +50,7 @@ const MedicalDashboard = async () => {
 
     return (
         <div className="min-h-screen bg-slate-50 flex">
-            {/* 1. Sidebar Navigation */}
-            <aside className="w-64 bg-white border-r border-slate-200 hidden lg:flex flex-col p-6">
-                <div className="flex items-center gap-2 text-blue-600 mb-10">
-                    <Activity size={28} strokeWidth={3} />
-                    <span className="text-2xl font-black tracking-tight">MediConnect</span>
-                </div>
 
-                <nav className="space-y-2 flex-1">
-                    {['Dashboard', 'Medical Records', 'Messages', 'Settings'].map((item) => (
-                        <a key={item} href="#" className={`block px-4 py-2.5 rounded-lg text-sm font-medium ${item === 'Dashboard' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}>
-                            {item}
-                        </a>
-                    ))}
-                </nav>
-
-                <div className="mt-auto p-4 bg-slate-100 rounded-xl">
-                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Support</p>
-                    <p className="text-sm text-slate-700 font-medium">Need help? Chat with a nurse 24/7</p>
-                </div>
-            </aside>
 
             {/* 2. Main Content Area */}
             <main className="flex-1 p-4 md:p-8 lg:p-12">
@@ -113,7 +93,7 @@ const MedicalDashboard = async () => {
                         description="Schedule virtual or in-person visits with primary care or specialists."
                         icon={<CalendarPlus size={24} />}
                         colorClass="bg-blue-100 text-blue-600"
-                        href='#'
+                        href='/dashboard/appoint-doctor'
                     />
                     <ActionCard
                         title="Lab Test Results"
