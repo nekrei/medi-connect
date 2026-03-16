@@ -1,7 +1,5 @@
 --function 01
-create or replace FUNCTION getDistrict(
-    loc INTEGER
-)
+create or replace FUNCTION getDistrict(loc INTEGER)
 RETURNS VARCHAR AS $$
 DECLARE
     dist_name VARCHAR;
@@ -64,3 +62,34 @@ from (hospitals join locations on hospitals.locationid = locations.locationid)
 --order by getdistsq(23, 90, latitude, longitude) asc
 limit 30;
 
+
+
+CREATE OR REPLACE FUNCTION get_doctor_specializations(doctor_id INTEGER)
+RETURNS TEXT[] AS $$
+DECLARE
+    specializations TEXT[];
+BEGIN
+    SELECT ARRAY_AGG(s.specializationname)
+    INTO specializations
+    FROM doctorspecializations ds
+    JOIN specializations s ON ds.specializationid = s.specializationid
+    WHERE ds.doctorid = doctor_id;
+    
+    RETURN specializations;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_chamber_available_days(chamber_id integer)
+RETURNS integer[] AS $$
+DECLARE
+    available_days integer[];
+BEGIN
+    SELECT ARRAY_AGG(DISTINCT weekday)
+    INTO available_days
+    FROM chamberschedules cs
+    WHERE cs.chamberid = chamber_id
+    AND cs.isactive = true;
+    RETURN available_days;
+END;
+$$ LANGUAGE plpgsql;

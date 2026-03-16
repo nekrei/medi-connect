@@ -24,6 +24,7 @@ type BasicFields = {
     firstname: string;
     lastname: string;
     email: string;
+    phonenumber: string;
     dateofbirth: string;
     sex: string;
     bloodtype: string;
@@ -102,6 +103,12 @@ function StepOne({
                     className={inputCls} required />
             </Field>
 
+            <Field id="phonenumber" label="Phone number">
+                <input id="phonenumber" type="tel" value={fields.phonenumber}
+                    onChange={(e) => onChange('phonenumber', e.target.value)}
+                    className={inputCls} minLength={7} maxLength={15} required />
+            </Field>
+
             <Field id="dateofbirth" label="Date of birth">
                 <input id="dateofbirth" type="date" value={fields.dateofbirth}
                     onChange={(e) => onChange('dateofbirth', e.target.value)}
@@ -147,8 +154,8 @@ function StepOne({
 
             <button type="submit"
                 className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-60 ${isDoctor
-                        ? 'bg-blue-600 hover:bg-blue-700'
-                        : 'bg-zinc-900 hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-zinc-900 hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
                     }`}>
                 {isDoctor ? 'Continue to doctor details →' : 'Create account'}
             </button>
@@ -246,6 +253,7 @@ export default function RegisterForm({ isDoctor }: { isDoctor: boolean }) {
 
     const [basic, setBasic] = useState<BasicFields>({
         username: '', firstname: '', lastname: '', email: '',
+        phonenumber: '',
         dateofbirth: '', sex: '', bloodtype: '', password: '', confirmPassword: '',
     });
 
@@ -292,6 +300,7 @@ export default function RegisterForm({ isDoctor }: { isDoctor: boolean }) {
                 firstname: basic.firstname.trim(),
                 lastname: basic.lastname.trim(),
                 email: basic.email.trim().toLowerCase(),
+                phonenumber: basic.phonenumber.trim(),
                 dateofbirth: basic.dateofbirth,
                 sex: basic.sex || null,
                 bloodtype: basic.bloodtype || null,
