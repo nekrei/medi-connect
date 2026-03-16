@@ -58,7 +58,21 @@ CREATE TABLE Doctors (
     ApprovalStatus VARCHAR(20) CHECK (ApprovalStatus IN ('Pending', 'Approved', 'Rejected')) NOT NULL DEFAULT 'Pending',
     ReviewedBy INT,
     ReviewedAt TIMESTAMP,
+    CauseOfRejection VARCHAR(250),
     FOREIGN KEY (DoctorId) REFERENCES Users(UserId),
+    FOREIGN KEY (ReviewedBy) REFERENCES Users(UserId)
+);
+
+CREATE TABLE RejectedDoctors (
+    RejectedDoctorId SERIAL PRIMARY KEY,
+    Designation VARCHAR(100),
+    RegistrationNumber VARCHAR(50) UNIQUE NOT NULL,
+    StartPracticeDate DATE,
+    RegistrationExpiry DATE,
+    ReviewedBy INT,
+    ReviewedAt TIMESTAMP,
+    CauseOfRejection VARCHAR(250),
+    FOREIGN KEY (RejectedDoctorId) REFERENCES Users(UserId),
     FOREIGN KEY (ReviewedBy) REFERENCES Users(UserId)
 );
 

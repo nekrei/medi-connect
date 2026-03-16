@@ -7,6 +7,7 @@ import { reviewDoctor } from '@/lib/repositories/user-repository';
 const reviewSchema = z.object({
     doctorid: z.number().int().positive(),
     status: z.enum(['Approved', 'Rejected']),
+    rejectionReason: z.string().optional(),
 });
 
 /** POST /api/admin/doctors/review
@@ -40,12 +41,13 @@ export async function POST(request: Request) {
         );
     }
 
-    const { doctorid, status } = parse.data;
+    const { doctorid, status, rejectionReason } = parse.data;
 
     const updated = await reviewDoctor({
         doctorid,
         status,
         reviewedby: Number(currentUser.id),
+        rejectionReason,
     });
 
     if (!updated) {

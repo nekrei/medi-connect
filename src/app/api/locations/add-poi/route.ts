@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
+
+export type newAddress = {
+    name?: string;
+    type: string;
+    holdingnumber?: string;
+    road?: string;
+    thana: string;
+    district: string;
+}
+
 export async function POST(request: Request) {
     const client = await pool.connect();
     try {
