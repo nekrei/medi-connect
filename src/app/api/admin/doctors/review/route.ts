@@ -50,9 +50,9 @@ export async function POST(request: Request) {
         rejectionReason,
     });
 
-    if (!updated) {
+    if (!updated || updated.res === 'FAILED') {
         return NextResponse.json(
-            { status: 'error', message: 'Doctor record not found' },
+            { status: 'error', message: updated?.msg || 'Unknown error occurred' },
             { status: 404 }
         );
     }

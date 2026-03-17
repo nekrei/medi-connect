@@ -64,14 +64,13 @@ CREATE TABLE Doctors (
 );
 
 CREATE TABLE RejectedDoctors (
-    RejectedDoctorId SERIAL PRIMARY KEY,
-    Designation VARCHAR(100),
-    RegistrationNumber VARCHAR(50) UNIQUE NOT NULL,
-    StartPracticeDate DATE,
+    RejectedDoctorId INT NOT NULL,
+    RegistrationNumber VARCHAR(50) NOT NULL,
     RegistrationExpiry DATE,
     ReviewedBy INT,
     ReviewedAt TIMESTAMP,
     CauseOfRejection VARCHAR(250),
+    entryid serial PRIMARY KEY,
     FOREIGN KEY (RejectedDoctorId) REFERENCES Users(UserId),
     FOREIGN KEY (ReviewedBy) REFERENCES Users(UserId)
 );
@@ -89,8 +88,9 @@ CREATE TABLE DoctorSpecializations (
     DoctorId INT,
     SpecializationId INT,
     UNIQUE(DoctorId, SpecializationId),
-    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId),
+    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId) on delete cascade,
     FOREIGN KEY (SpecializationId) REFERENCES Specializations(SpecializationId)
+    on delete cascade
 );
 
 
@@ -112,7 +112,7 @@ CREATE TABLE Chambers (
     UNIQUE(DoctorId, HospitalId),
     CheckupPrice DECIMAL(10, 2),
     AppointmentContact VARCHAR(15),
-    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId),
+    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId) on delete cascade,
     FOREIGN KEY (HospitalId) REFERENCES Hospitals(HospitalId)
 );
 
@@ -125,7 +125,7 @@ CREATE TABLE Reviews (
     Comment VARCHAR(255),
     ReviewDate DATE DEFAULT CURRENT_DATE,
     FOREIGN KEY (UserId) REFERENCES Users(UserId),
-    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId)
+    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId) on delete cascade
 );
 
 -- LABIB --
