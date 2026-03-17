@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const availableDay = searchParams.get("availableDay") || "";
 
     const doctors = await searchDoctors({
-        name: name || null,
+        name: name,
         district: district || null,
         thana: thana || null,
         specialization: specialization || null,

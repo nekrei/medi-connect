@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const clndis = district?.trim();
     try {
         const thanas = await sql`
-            select thanaid, thaname from thanas
+            select thanaid, thananame from thanas
             join districts on thanas.districtid = districts.districtid
             where districtname LIKE ${clndis}`;
 
