@@ -1,235 +1,285 @@
 --ABID--
 
-CREATE TABLE Districts (
-    DistrictId SERIAL PRIMARY KEY,
-    DistrictName VARCHAR(100) UNIQUE NOT NULL
+create table districts (
+   districtid   serial primary key,
+   districtname varchar(100) unique not null
 );
 
-CREATE TABLE Thanas (
-    ThanaId SERIAL PRIMARY KEY,
-    ThanaName VARCHAR(100) NOT NULL,
-    DistrictId INT NOT NULL,
-    PostalCode VARCHAR(10),
-    FOREIGN KEY (DistrictId) REFERENCES Districts(DistrictId)
+create table thanas (
+   thanaid    serial primary key,
+   thananame  varchar(100) not null,
+   districtid int not null,
+   postalcode varchar(10),
+   foreign key ( districtid )
+      references districts ( districtid )
 );
 
-CREATE TABLE Locations (
-    LocationId SERIAL PRIMARY KEY,
-    Latitude DECIMAL(10,9),
-    Longitude DECIMAL(10,9),
-    PropertyName VARCHAR(100),
-    HoldingNumber VARCHAR(50),
-    Road VARCHAR(50),
-    ThanaId INT NOT NULL,
-    FOREIGN KEY (ThanaId) REFERENCES Thanas(ThanaId)
+create table locations (
+   locationid    serial primary key,
+   latitude      decimal(10,9),
+   longitude     decimal(10,9),
+   propertyname  varchar(100),
+   holdingnumber varchar(50),
+   road          varchar(50),
+   thanaid       int not null,
+   foreign key ( thanaid )
+      references thanas ( thanaid )
 );
 
-CREATE TABLE Users (
-    UserId SERIAL PRIMARY KEY,
-    Username VARCHAR(50) UNIQUE NOT NULL,
-    FirstName VARCHAR(50) NOT NULL,
-    LastName VARCHAR(50),
-    Email VARCHAR(100),
-    DateOfBirth DATE NOT NULL,
-    Sex CHAR(1) CHECK (Sex IN ('M', 'F', 'O')),
-    BloodType VARCHAR(3) CHECK (BloodType IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
-    Password VARCHAR(255) NOT NULL,
-    Role VARCHAR(20) CHECK (Role IN ('Admin', 'User', 'Doctor')) NOT NULL,
-    LocationId INT,
-    FOREIGN KEY (LocationId) REFERENCES Locations(LocationId)
-
+create table users (
+   userid      serial primary key,
+   username    varchar(50) unique not null,
+   firstname   varchar(50) not null,
+   lastname    varchar(50),
+   email       varchar(100),
+   dateofbirth date not null,
+   sex         char(1) check ( sex in ( 'M',
+                                'F',
+                                'O' ) ),
+   bloodtype   varchar(3) check ( bloodtype in ( 'A+',
+                                               'A-',
+                                               'B+',
+                                               'B-',
+                                               'AB+',
+                                               'AB-',
+                                               'O+',
+                                               'O-' ) ),
+   password    varchar(255) not null,
+   role        varchar(20) check ( role in ( 'Admin',
+                                      'User',
+                                      'Doctor' ) ) not null,
+   locationid  int,
+   foreign key ( locationid )
+      references locations ( locationid )
 );
 
 --- phone number extra table --
-CREATE TABLE PhoneNumbers (
-    PhoneNumberId SERIAL PRIMARY KEY,
-    UserId INT NOT NULL,
-    PhoneNumber VARCHAR(15) NOT NULL,
-    FOREIGN KEY (UserId) REFERENCES Users(UserId)
+create table phonenumbers (
+   phonenumberid serial primary key,
+   userid        int not null,
+   phonenumber   varchar(15) not null,
+   foreign key ( userid )
+      references users ( userid )
 );
 
 --drop table doctors;
-CREATE TABLE Doctors (
-    DoctorId SERIAL PRIMARY KEY,
-    Designation VARCHAR(100),
-    RegistrationNumber VARCHAR(50) UNIQUE NOT NULL,
-    StartPracticeDate DATE,
-    RegistrationExpiry DATE,
-    ApprovalStatus VARCHAR(20) CHECK (ApprovalStatus IN ('Pending', 'Approved', 'Rejected')) NOT NULL DEFAULT 'Pending',
-    ReviewedBy INT,
-    ReviewedAt TIMESTAMP,
-    CauseOfRejection VARCHAR(250),
-    FOREIGN KEY (DoctorId) REFERENCES Users(UserId),
-    FOREIGN KEY (ReviewedBy) REFERENCES Users(UserId)
+create table doctors (
+   doctorid           serial primary key,
+   designation        varchar(100),
+   registrationnumber varchar(50) unique not null,
+   startpracticedate  date,
+   registrationexpiry date,
+   approvalstatus     varchar(20) check ( approvalstatus in ( 'Pending',
+                                                          'Approved',
+                                                          'Rejected' ) ) not null default 'Pending',
+   reviewedby         int,
+   reviewedat         timestamp,
+   causeofrejection   varchar(250),
+   foreign key ( doctorid )
+      references users ( userid ),
+   foreign key ( reviewedby )
+      references users ( userid )
 );
 
-CREATE TABLE RejectedDoctors (
-    RejectedDoctorId INT NOT NULL,
-    RegistrationNumber VARCHAR(50) NOT NULL,
-    RegistrationExpiry DATE,
-    ReviewedBy INT,
-    ReviewedAt TIMESTAMP,
-    CauseOfRejection VARCHAR(250),
-    entryid serial PRIMARY KEY,
-    FOREIGN KEY (RejectedDoctorId) REFERENCES Users(UserId),
-    FOREIGN KEY (ReviewedBy) REFERENCES Users(UserId)
+create table rejecteddoctors (
+   rejecteddoctorid   int not null,
+   registrationnumber varchar(50) not null,
+   registrationexpiry date,
+   reviewedby         int,
+   reviewedat         timestamp,
+   causeofrejection   varchar(250),
+   entryid            serial primary key,
+   foreign key ( rejecteddoctorid )
+      references users ( userid ),
+   foreign key ( reviewedby )
+      references users ( userid )
 );
 
 --- Specialization table ---
-CREATE TABLE Specializations (
-    SpecializationId SERIAL PRIMARY KEY,
-    SpecializationName VARCHAR(100) UNIQUE NOT NULL
+create table specializations (
+   specializationid   serial primary key,
+   specializationname varchar(100) unique not null
 );
 
 --Junction table 
 --drop table doctorspecializations;
-CREATE TABLE DoctorSpecializations (
-    DoctorSpecializationID SERIAL PRIMARY KEY,
-    DoctorId INT,
-    SpecializationId INT,
-    UNIQUE(DoctorId, SpecializationId),
-    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId) on delete cascade,
-    FOREIGN KEY (SpecializationId) REFERENCES Specializations(SpecializationId)
-    on delete cascade
+create table doctorspecializations (
+   doctorspecializationid serial primary key,
+   doctorid               int,
+   specializationid       int,
+   unique ( doctorid,
+            specializationid ),
+   foreign key ( doctorid )
+      references doctors ( doctorid )
+         on delete cascade,
+   foreign key ( specializationid )
+      references specializations ( specializationid )
+         on delete cascade
 );
 
 
-CREATE TABLE Hospitals (
-    HospitalId SERIAL PRIMARY KEY,
-    LocationId INT NOT NULL,
-    HospitalName VARCHAR(100) NOT NULL,
-    Hotline VARCHAR(15),
-    Website VARCHAR(100),
-    FOREIGN KEY (LocationId) REFERENCES Locations(LocationId)
+create table hospitals (
+   hospitalid   serial primary key,
+   locationid   int not null,
+   hospitalname varchar(100) not null,
+   hotline      varchar(15),
+   website      varchar(100),
+   foreign key ( locationid )
+      references locations ( locationid )
 );
 
 --junction doctor hosp
 --drop table chambers;
-CREATE TABLE Chambers (
-    ChamberId SERIAL PRIMARY KEY,
-    DoctorId INT NOT NULL,
-    HospitalId INT NOT NULL,
-    UNIQUE(DoctorId, HospitalId),
-    CheckupPrice DECIMAL(10, 2),
-    AppointmentContact VARCHAR(15),
-    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId) on delete cascade,
-    FOREIGN KEY (HospitalId) REFERENCES Hospitals(HospitalId)
+create table chambers (
+   chamberid          serial primary key,
+   doctorid           int not null,
+   hospitalid         int not null,
+   unique ( doctorid,
+            hospitalid ),
+   checkupprice       decimal(10,2),
+   appointmentcontact varchar(15),
+   foreign key ( doctorid )
+      references doctors ( doctorid )
+         on delete cascade,
+   foreign key ( hospitalid )
+      references hospitals ( hospitalid )
 );
 
 --drop table reviews;
-CREATE TABLE Reviews (
-    ReviewId SERIAL PRIMARY KEY,
-    UserId INT NOT NULL,
-    DoctorId INT NOT NULL,
-    Rating INT CHECK (Rating BETWEEN 1 and 5) NOT NULL,
-    Comment VARCHAR(255),
-    ReviewDate DATE DEFAULT CURRENT_DATE,
-    FOREIGN KEY (UserId) REFERENCES Users(UserId),
-    FOREIGN KEY (DoctorId) REFERENCES Doctors(DoctorId) on delete cascade
+create table reviews (
+   reviewid   serial primary key,
+   userid     int not null,
+   doctorid   int not null,
+   rating     int check ( rating between 1 and 5 ) not null,
+   comment    varchar(255),
+   reviewdate date default current_date,
+   foreign key ( userid )
+      references users ( userid ),
+   foreign key ( doctorid )
+      references doctors ( doctorid )
+         on delete cascade
 );
 
 -- LABIB --
 
-CREATE TABLE Medcine (
-    MedicineID INT PRIMARY KEY,
-    MedicineName VARCHAR(100) NOT NULL,
-    Manufacturer VARCHAR(100),
-    ExpiryDate DATE,
-    Price DECIMAL(10, 2) NOT NULL,
-    DETAILS VARCHAR(255)
+create table medicine (
+   medicineid   serial primary key,
+   medicinename varchar(100) not null,
+   manufacturer varchar(100),
+   price        decimal(10,2) not null,
+   details      varchar(255)
 );
 
-CREATE TABLE TESTS (
-    TestID INT PRIMARY KEY,
-    TestName VARCHAR(100) NOT NULL,
-    TestCategory VARCHAR(100),
-    SampleType VARCHAR(50),
-    Description VARCHAR(255)
+create table tests (
+   testid       serial primary key,
+   testname     varchar(100) not null,
+   testcategory varchar(100),
+   sampletype   varchar(50),
+   description  varchar(255)
 );
 
-CREATE TABLE Diagnostic_Center (
-    CenterID INT PRIMARY KEY,
-    CenterName VARCHAR(100) NOT NULL,
-    LocationId INT,
-    ContactNumber VARCHAR(15),
-    OpeningTime TIME,
-    ClosingTime TIME,
-    Email VARCHAR(100),
-    FOREIGN KEY (LocationId) REFERENCES Locations(LocationId)
+create table diagnostic_center (
+   centerid      serial primary key,
+   centername    varchar(100) not null,
+   locationid    int,
+   contactnumber varchar(15),
+   openingtime   time,
+   closingtime   time,
+   email         varchar(100),
+   foreign key ( locationid )
+      references locations ( locationid )
 );
 
-CREATE TABLE Center_Available_Tests (
-    center_available_testsID serial PRIMARY KEY,
-    CenterID INT,
-    TestID INT,
-    Price DECIMAL(10, 2) NOT NULL,
-    unique (CenterID,TestID),
-    FOREIGN KEY (CenterID) REFERENCES Diagnostic_Center(CenterID),
-    FOREIGN KEY (TestID) REFERENCES TESTS(TestID)
+create table center_available_tests (
+   center_available_testsid serial primary key,
+   centerid                 int,
+   testid                   int,
+   price                    decimal(10,2) not null,
+   unique ( centerid,
+            testid ),
+   foreign key ( centerid )
+      references diagnostic_center ( centerid ),
+   foreign key ( testid )
+      references tests ( testid )
 );
 
-CREATE TABLE Test_Report (
-    ReportID INT PRIMARY KEY,
-    TestID INT,
-    CenterID INT,
-    PatientID INT,
-    TestDate DATE,
-    ReportLink VARCHAR(255),
-    Result VARCHAR(255),
-    FOREIGN KEY (TestID) REFERENCES TESTS(TestID),
-    FOREIGN KEY (PatientID) REFERENCES Users(UserId),
-    FOREIGN KEY (CenterID) REFERENCES Diagnostic_Center(CenterID)
+create table test_report (
+   reportid   int primary key,
+   testid     int,
+   centerid   int,
+   patientid  int,
+   testdate   date,
+   reportlink varchar(255),
+   result     varchar(255),
+   foreign key ( testid )
+      references tests ( testid ),
+   foreign key ( patientid )
+      references users ( userid ),
+   foreign key ( centerid )
+      references diagnostic_center ( centerid )
 );
 
 --drop table prescription;
-CREATE TABLE prescription (
-    prescriptionID INT,
-    PatientID INT,
-    DoctorID INT,
-    AppointmentDate DATE,
-    Notes VARCHAR(255),
-    PRIMARY KEY (prescriptionID),
-    FOREIGN KEY (PatientID) REFERENCES users(userid),
-    FOREIGN KEY (DoctorID) REFERENCES doctors(doctorid)
+create table prescription (
+   prescriptionid  int,
+   patientid       int,
+   doctorid        int,
+   appointmentdate date,
+   notes           varchar(255),
+   primary key ( prescriptionid ),
+   foreign key ( patientid )
+      references users ( userid ),
+   foreign key ( doctorid )
+      references doctors ( doctorid )
 );
 
 
 -- drop table if exists Prescribed_medicine;
 --drop TABLE Prescribed_medicine;
-CREATE TABLE Prescribed_medicine (
-    Prescribed_medicineID serial PRIMARY KEY,
-    PrescriptionID INT,
-    MedicineID INT,
-    Dosage VARCHAR(50),
-    Frequency VARCHAR(50),
-    Duration VARCHAR(50),
-    unique (PrescriptionID,MedicineID),
-    FOREIGN KEY (MedicineID) REFERENCES Medcine(MedicineID),
-    FOREIGN KEY (PrescriptionID) REFERENCES prescription(prescriptionID)
+create table prescribed_medicine (
+   prescribed_medicineid serial primary key,
+   prescriptionid        int,
+   medicineid            int,
+   dosage                varchar(50),
+   frequency             varchar(50),
+   duration              varchar(50),
+   remarks               varchar(255),
+   unique ( prescriptionid,
+            medicineid ),
+   foreign key ( medicineid )
+      references medcine ( medicineid ),
+   foreign key ( prescriptionid )
+      references prescription ( prescriptionid )
 );
 
 
 --drop TABLE prescribed_test;
-CREATE TABLE Prescribed_test (
-    Prescibed_testID serial PRIMARY KEY,
-    TestId INT, 
-    PrescriptionID INT,
-    unique (TestId,PrescriptionID),
-    FOREIGN KEY (TestId) REFERENCES TESTS(TestID),
-    ForeIGN KEY (PrescriptionID) REFERENCES prescription(prescriptionID)
+create table prescribed_test (
+   prescibed_testid serial primary key,
+   testid           int,
+   prescriptionid   int,
+   unique ( testid,
+            prescriptionid ),
+   foreign key ( testid )
+      references tests ( testid ),
+   foreign key ( prescriptionid )
+      references prescription ( prescriptionid )
 );
 
 -- chamber schedule
 -- 0 = Sunday, 1 = Monday, ... 6 = Saturday
-CREATE TABLE IF NOT EXISTS DoctorChamberSchedules (
-    ScheduleId SERIAL PRIMARY KEY,
-    ChamberId INT NOT NULL REFERENCES Chambers(ChamberId) ON DELETE CASCADE,
-    Weekday SMALLINT NOT NULL CHECK (Weekday BETWEEN 0 AND 6),
-    StartTime TIME NOT NULL,
-    EndTime TIME NOT NULL,
-    IsActive BOOLEAN NOT NULL DEFAULT TRUE,
-    CHECK (StartTime < EndTime),
-    UNIQUE (ChamberId, Weekday)
+create table if not exists doctorchamberschedules (
+   scheduleid serial primary key,
+   chamberid  int not null
+      references chambers ( chamberid )
+         on delete cascade,
+   weekday    smallint not null check ( weekday between 0 and 6 ),
+   starttime  time not null,
+   endtime    time not null,
+   isactive   boolean not null default true,
+   check ( starttime < endtime ),
+   unique ( chamberid,
+            weekday )
 );
 
 

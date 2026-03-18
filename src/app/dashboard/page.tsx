@@ -86,7 +86,7 @@ const MedicalDashboard = async () => {
                         description="Track active medications, dosage instructions, and request pharmacy refills."
                         icon={<Pill size={24} />}
                         colorClass="bg-emerald-100 text-emerald-600"
-                        href='#'
+                        href='/dashboard/check-prescription'
                     />
                     <ActionCard
                         title="Appoint Doctor"

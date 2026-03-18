@@ -56,3 +56,29 @@ $$;
     
 call change_status(11, 'Approved', 12, 'cool guy',NULL,null);
 
+
+
+CREATE OR REPLACE FUNCTION medicinecount(prescription_id int) RETURNS int AS $$
+DECLARE
+    med_count int;
+BEGIN
+    SELECT COUNT(*) INTO med_count
+    FROM prescribed_medicine
+    WHERE prescriptionid = prescription_id;
+    
+    RETURN med_count;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION testcount(prescription_id int) RETURNS int AS $$
+DECLARE
+    test_count int;
+BEGIN
+    SELECT COUNT(*) INTO test_count
+    FROM prescribed_test
+    WHERE prescriptionid = prescription_id;
+    
+    RETURN test_count;
+END;
+$$ LANGUAGE plpgsql;
