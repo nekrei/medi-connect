@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
+
+export type newAddress = {
+    name?: string;
+    type: string;
+    holdingnumber?: string;
+    road?: string;
+    thana: string;
+    district: string;
+}
+
 export async function POST(request: Request) {
     const client = await pool.connect();
     try {
@@ -49,13 +59,22 @@ export async function POST(request: Request) {
         );
         let data = await coordResponse.json();
         console.log('Coordinates fetched from API:', data);
-        if(data === null || data.data.length === 0) {
+        if(coordResponse.status !== 200 || data === null || data.data.length === 0) {
             addr = `${holdingnumber ? holdingnumber + ', ' : ''}${thana}, ${district}`;
             coordResponse = await fetch(
                 `http://localhost:3000/api/locations/get-coords?q=${encodeURIComponent(addr)}`
             );
             data = await coordResponse.json();
             console.log('fallback address:', data);
+        }
+        if(coordResponse.status !== 200 || data === null || data.data.length === 0) {
+            data = {
+                data: [{
+                    lat: 23.8103,
+                    lon: 90.4125
+                }]
+            }
+            console.log('default coordinates:', data);
         }
         const lat = data.data[0].lat;
         const lng = data.data[0].lon;

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, MapPin, Stethoscope, CalendarDays, LocateFixed } from "lucide-react";
 import { DoctorSearchRow } from "@/lib/repositories/doctor-appointment-repository";
+import LocationMap, { MapCoords, LocDetails } from "@/components/LeafletMap";
 
 type LocationOptionRow = {
     districtname: string;
@@ -190,6 +191,10 @@ export default function AppointDoctorPage() {
     const [locationOptions, setLocationOptions] = useState<LocationOptionRow[]>([]);
     const [specialtyOptionsData, setSpecialtyOptionsData] = useState<string[]>([]);
     const [filteredDoctors, setFilteredDoctors] = useState<DoctorSearchRow[]>([]);
+    const [currentLocation, setCurrentLocation] = useState<MapCoords>({
+        lat: 23.8103,
+        lng: 90.3654,
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -310,6 +315,9 @@ export default function AppointDoctorPage() {
             (position) => {
                 const { latitude, longitude } = position.coords;
 
+                // Update map location
+                setCurrentLocation({ lat: latitude, lng: longitude });
+
                 const nearestThana = Object.entries(THANA_COORDS).reduce(
                     (closest, [name, coords]) => {
                         const distance = getDistanceKm(latitude, longitude, coords.lat, coords.lng);
@@ -334,6 +342,25 @@ export default function AppointDoctorPage() {
             { enableHighAccuracy: true, timeout: 10000 }
         );
     };
+
+    // Convert filtered doctors to map details
+    const doctorMapDetails = useMemo(() => {
+        const detailsMap: Record<string, LocDetails> = {};
+
+        filteredDoctors.forEach((doctor) => {
+            const coords = THANA_COORDS[doctor.thana];
+            if (coords && !detailsMap[doctor.thana]) {
+                detailsMap[doctor.thana] = {
+                    name: doctor.thana,
+                    lat: coords.lat,
+                    lng: coords.lng,
+                    address: `${doctor.thana}, ${doctor.district}`,
+                };
+            }
+        });
+
+        return Object.values(detailsMap);
+    }, [filteredDoctors]);
 
     return (
         <main className="min-h-screen bg-slate-50">
@@ -463,6 +490,13 @@ export default function AppointDoctorPage() {
             </section>
 
             <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+                {/* Map Container */}
+                <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                    <div style={{ height: "400px", width: "100%" }}>
+                        <LocationMap base={currentLocation} details={doctorMapDetails} />
+                    </div>
+                </div>
+
                 <div className="mb-4 flex items-center justify-between">
                     <p className="text-sm text-slate-500">
                         Showing <span className="font-semibold text-slate-700">{filteredDoctors.length}</span>{" "}

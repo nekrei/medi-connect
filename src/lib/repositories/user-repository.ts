@@ -190,18 +190,12 @@ export async function reviewDoctor(input: {
     doctorid: number;
     status: 'Approved' | 'Rejected';
     reviewedby: number;
-}): Promise<DoctorInfo | null> {
+    rejectionReason?: string;
+}): Promise<{res:string, msg:string} | null> {
     const rows = (await sql`
-        UPDATE doctors
-        SET
-            approvalstatus = ${input.status},
-            reviewedby     = ${input.reviewedby},
-            reviewedat     = NOW()
-        WHERE doctorid = ${input.doctorid}
-        RETURNING doctorid, designation, registrationnumber,
-                  startpracticedate, registrationexpiry,
-                  approvalstatus, reviewedby, reviewedat
-    `) as DoctorInfo[];
+        call change_status(${input.doctorid}, ${input.status}, ${input.reviewedby}, ${input.rejectionReason ?? null}, 
+        null, null);
+    `) as {res:string, msg:string}[];
     return rows[0] ?? null;
 }
 
