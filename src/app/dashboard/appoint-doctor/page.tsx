@@ -533,12 +533,24 @@ export default function AppointDoctorPage() {
                                     </div>
 
                                     <div className="md:justify-self-end">
-                                        <button
-                                            type="button"
-                                            className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 md:w-auto"
+                                        <Link
+                                            href={{
+                                                pathname: "/appointment/booking-doctor",
+                                                query: {
+                                                    name: doctor.name,
+                                                    hospital: doctor.hospital,
+                                                    specialization: Array.isArray(doctor.specialization)
+                                                        ? doctor.specialization.join(", ")
+                                                        : doctor.specialization,
+                                                    district: doctor.district,
+                                                    thana: doctor.thana,
+                                                    availabledays: (doctor.availabledays ?? []).join(","),
+                                                },
+                                            }}
+                                            className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 md:w-auto"
                                         >
                                             Appoint Now
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </article>
