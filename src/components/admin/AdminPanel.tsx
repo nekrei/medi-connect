@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import AddPoi from './AddPoi';
+import AddMedicine from './AddMedicine';
 import ReviewDoctors from './ReviewDoctors';
 
-type Section = 'review-doctors' | 'add-hospital' | 'add-dgcenter';
+type Section = 'review-doctors' | 'add-hospital' | 'add-dgcenter' | 'add-medicine';
 
 const navItems: { id: Section; label: string; icon: string }[] = [
     { id: 'review-doctors', label: 'Review Doctors', icon: '👨‍⚕️' },
     { id: 'add-hospital', label: 'Add Hospital', icon: '🏥' },
     { id: 'add-dgcenter', label: 'Add Diagnostic Center', icon: '🔬' },
+    { id: 'add-medicine', label: 'Add Medicine', icon: '💊' },
 ];
 
 export default function AdminPanel() {
@@ -64,6 +66,7 @@ export default function AdminPanel() {
                     {active === 'review-doctors' && <ReviewDoctors />}
                     {active === 'add-hospital' && <AddPoi type="hospital" />}
                     {active === 'add-dgcenter' && <AddPoi type="dgcenter" />}
+                    {active === 'add-medicine' && <AddMedicine />}
                 </main>
             </div>
         </div>

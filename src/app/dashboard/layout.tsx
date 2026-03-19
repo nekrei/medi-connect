@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Activity } from "lucide-react";
 
+import { getCurrentUser } from "@/lib/auth/current-user";
+
 export const metadata: Metadata = {
     title: "Dashboard | MediConnect",
     description: "MediConnect patient dashboard",
@@ -14,11 +16,14 @@ const navItems = [
     { label: "Settings", href: "#", active: false },
 ];
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const user = await getCurrentUser();
+    const isAdmin = user?.role === "Admin";
+
     return (
         <div className="min-h-screen bg-slate-50 lg:flex">
             <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white p-6 lg:flex">
@@ -40,6 +45,14 @@ export default function DashboardLayout({
                             {item.label}
                         </Link>
                     ))}
+                    {isAdmin ? (
+                        <Link
+                            href="/admin"
+                            className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                        >
+                            Admin Panel
+                        </Link>
+                    ) : null}
                 </nav>
 
                 <div className="mt-auto rounded-xl bg-slate-100 p-4">
