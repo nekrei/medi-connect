@@ -136,6 +136,6 @@ BEGIN
 END;
 $$ language plpgsql;
 
-SELECT add_appointment(10, 10, date'2026-03-23');
+SELECT add_appointment(10, 7, date'2026-03-23');
     
 

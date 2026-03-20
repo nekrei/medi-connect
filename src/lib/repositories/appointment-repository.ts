@@ -177,13 +177,9 @@ export async function getScheduleByDoctor(doctorId: number): Promise<Schedule[]>
     try {
         const res = await client.query<ScheduleDbRow>(
             `select
-                cs.scheduleid,
-                c.chamberid,
-                h.hospitalname,
-                addressString(l.locationid) as addressstring,
+                cs.scheduleid,c.chamberid,h.hospitalname,addressString(l.locationid) as addressstring,
                 (u.firstname || ' ' || u.lastname) as doctorname,
-                cs.weekday,
-                to_char(cs.starttime, 'HH12:MI AM') as starttime,
+                cs.weekday,to_char(cs.starttime, 'HH12:MI AM') as starttime,
                 to_char(cs.endtime, 'HH12:MI AM') as endtime
             from chamberschedules cs
             join chambers c on cs.chamberid = c.chamberid
@@ -216,13 +212,10 @@ export async function getScheduleByTime(chamberId: number, week: number, start: 
     try {
         const res = await client.query<ScheduleDbRow>(
             `select
-                cs.scheduleid,
-                c.chamberid,
-                h.hospitalname,
+                cs.scheduleid,c.chamberid,h.hospitalname,
                 addressString(l.locationid) as addressstring,
                 (u.firstname || ' ' || u.lastname) as doctorname,
-                cs.weekday,
-                to_char(cs.starttime, 'HH12:MI AM') as starttime,
+                cs.weekday,to_char(cs.starttime, 'HH12:MI AM') as starttime,
                 to_char(cs.endtime, 'HH12:MI AM') as endtime
             from chamberschedules cs
             join chambers c on cs.chamberid = c.chamberid
@@ -255,14 +248,9 @@ export async function getScheduleByWeekday(chamberId: number, week: number): Pro
     try {
         const res = await client.query<ScheduleDbRow>(
             `select
-                cs.scheduleid,
-                c.chamberid,
-                h.hospitalname,
-                addressString(l.locationid) as addressstring,
-                (u.firstname || ' ' || u.lastname) as doctorname,
-                cs.weekday,
-                to_char(cs.starttime, 'HH12:MI AM') as starttime,
-                to_char(cs.endtime, 'HH12:MI AM') as endtime
+                cs.scheduleid,c.chamberid,h.hospitalname,addressString(l.locationid) as addressstring,
+                (u.firstname || ' ' || u.lastname) as doctorname,cs.weekday,
+                to_char(cs.starttime, 'HH12:MI AM') as starttime,to_char(cs.endtime, 'HH12:MI AM') as endtime
             from chamberschedules cs
             join chambers c on cs.chamberid = c.chamberid
             join doctors d on c.doctorid = d.doctorid
@@ -294,12 +282,8 @@ export async function getSchedulesByHospital(doctorId: number, hospitalId: numbe
     try {
         const res = await client.query<ScheduleDbRow>(
             `select
-                cs.scheduleid,
-                c.chamberid,
-                h.hospitalname,
-                addressString(l.locationid) as addressstring,
-                (u.firstname || ' ' || u.lastname) as doctorname,
-                cs.weekday,
+                cs.scheduleid,c.chamberid,h.hospitalname,addressString(l.locationid) as addressstring,
+                (u.firstname || ' ' || u.lastname) as doctorname,cs.weekday,
                 to_char(cs.starttime, 'HH12:MI AM') as starttime,
                 to_char(cs.endtime, 'HH12:MI AM') as endtime
             from chamberschedules cs
@@ -333,19 +317,14 @@ export async function getAppointmentsBySchedule(scheduleId: number): Promise<App
     try {
         const res = await client.query<AppointmentDbRow>(
             `select
-                i.appointmentid,
-                i.scheduleid,
-                i.patientid,
-                (u.firstname || ' ' || u.lastname) as patientname,
-                u.email as patientemail,
+                i.appointmentid,i.scheduleid,i.patientid,
+                (u.firstname || ' ' || u.lastname) as patientname,u.email as patientemail,
                 to_char(i.esttime, 'YYYY-MM-DD"T"HH24:MI:SS') as timeslot,
-                u.sex,
-                i.status,
-                to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
+                u.sex,i.status,to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
             from appointments i
             join users u on i.patientid = u.userid
             where i.scheduleid = $1
-            order by i.esttime desc nulls last, i.requestedat desc nulls last`,
+            order by i.esttime desc, i.requestedat desc`,
             [scheduleId]
         );
 
@@ -360,19 +339,13 @@ export async function getAppointmentsByDateSchedule(scheduleId: number, date: st
     try {
         const res = await client.query<AppointmentDbRow>(
             `select
-                i.appointmentid,
-                i.scheduleid,
-                i.patientid,
-                (u.firstname || ' ' || u.lastname) as patientname,
-                u.email as patientemail,
-                to_char(i.esttime, 'YYYY-MM-DD"T"HH24:MI:SS') as timeslot,
-                u.sex,
-                i.status,
-                to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
+                i.appointmentid,i.scheduleid,i.patientid,(u.firstname || ' ' || u.lastname) as patientname,
+                u.email as patientemail,to_char(i.esttime, 'YYYY-MM-DD"T"HH24:MI:SS') as timeslot,
+                u.sex,i.status,to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
             from appointments i
             join users u on i.patientid = u.userid
             where i.scheduleid = $1 and date_trunc('day', i.esttime) = date_trunc('day', $2::date)
-            order by i.esttime desc nulls last, i.requestedat desc nulls last`,
+            order by i.esttime desc, i.requestedat desc`,
             [scheduleId, date]
         );
 
@@ -396,4 +369,60 @@ export async function listDoctorAppointmentSchedules(doctorId: number): Promise<
         starttime: schedule.starttime,
         endtime: schedule.endtime,
     }));
+}
+
+export async function updateAppointmentStatus(appointmentId: number, newStatus: AppointmentStatus): Promise<void> {
+    const client = await pool.connect();
+    try {
+        await client.query('begin');
+        await client.query(
+            'update appointments set status = $1 where appointmentid = $2',
+            [newStatus, appointmentId]
+        );
+        await client.query('commit');
+    } catch (error) {
+        await client.query('rollback');
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+export type PatientAppointmentRow = {
+    appointmentid: number,
+    doctorname: string,
+    doctordesignation: string,
+    doctormail: string | null,
+    hospitalname: string,
+    chamberloc: string,
+    chamberduration: string,
+    timeslot: string | null,
+    status: AppointmentStatus,
+    requestedat: string | null
+}
+export async function getAppointmentByPatient(patientId : number):
+    Promise<PatientAppointmentRow[]> {
+        const client = await pool.connect();
+        try {
+            const res = await client.query<PatientAppointmentRow>(
+            `select 
+                appointmentid, (u.firstname || ' ' || u.lastname) as doctorname, d.designation as doctordesignation, 
+                u.email as doctormail, h.hospitalname, addressString(l.locationid) as chamberloc,
+                (to_char(cs.starttime, 'HH12:MI AM') || ' - ' || to_char(cs.endtime, 'HH12:MI AM')) as chamberduration,
+                to_char(i.esttime, 'YYYY-MM-DD"T"HH24:MI:SS') as timeslot, i.status,
+                to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
+            from appointments i join chamberschedules cs on i.scheduleid = cs.scheduleid
+            join chambers c on cs.chamberid = c.chamberid
+            join doctors d on c.doctorid = d.doctorid
+            join users u on d.doctorid = u.userid
+            join hospitals h on c.hospitalid = h.hospitalid
+            join locations l on h.locationid = l.locationid
+            where i.patientid = $1
+            order by i.esttime desc, i.requestedat desc`,
+            [patientId]
+        );
+        return res.rows;
+    } finally {
+        client.release();
+    }
 }

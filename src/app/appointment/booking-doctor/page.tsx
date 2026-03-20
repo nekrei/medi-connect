@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
     ArrowLeft,
@@ -87,7 +87,7 @@ function getInitials(name: string) {
         .join("");
 }
 
-export default function BookingDoctorPage() {
+function BookingDoctorContent() {
     const searchParams = useSearchParams();
 
     const doctorName = searchParams.get("name") ?? "Dr. Munira Zebin Kuasha";
@@ -416,5 +416,17 @@ export default function BookingDoctorPage() {
                 </aside>
             </section>
         </main>
+    );
+}
+
+export default function BookingDoctorPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center p-4">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-r-transparent"></div>
+            </div>
+        }>
+            <BookingDoctorContent />
+        </Suspense>
     );
 }

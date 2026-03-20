@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { redirect } from 'next/navigation';
 
+import { getAppointmentByPatient } from '@/lib/repositories/appointment-repository';
+import { format } from 'date-fns';
+
 // --- Types ---
 interface ActionCardProps {
     title: string;
@@ -48,6 +51,22 @@ const MedicalDashboard = async () => {
 
     const userName = user.name;
     const isDoctor = user.role === 'Doctor';
+    const patientAppointments = !isDoctor ? await getAppointmentByPatient(parseInt(user.id, 10)) : [];
+    
+    const upcomingAppointments = patientAppointments.filter(a => a.status === 'Pending' || a.status === 'Scheduled');
+    const pastAppointments = patientAppointments.filter(a => a.status !== 'Pending' && a.status !== 'Scheduled');
+    
+    const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments.sort((a,b) => {
+        const timeA = a.timeslot ? new Date(a.timeslot).getTime() : (a.requestedat ? new Date(a.requestedat).getTime() : 0);
+        const timeB = b.timeslot ? new Date(b.timeslot).getTime() : (b.requestedat ? new Date(b.requestedat).getTime() : 0);
+        return timeA - timeB;
+    })[0] : null;
+
+    const recentHistory = pastAppointments.sort((a,b) => {
+        const timeA = a.timeslot ? new Date(a.timeslot).getTime() : (a.requestedat ? new Date(a.requestedat).getTime() : 0);
+        const timeB = b.timeslot ? new Date(b.timeslot).getTime() : (b.requestedat ? new Date(b.requestedat).getTime() : 0);
+        return timeB - timeA;
+    }).slice(0, 3);
 
     return (
         <div className="min-h-screen bg-slate-50 flex">
@@ -109,6 +128,13 @@ const MedicalDashboard = async () => {
                     ) : (
                         <>
                             <ActionCard
+                                title="My Appointments"
+                                description="View your past and upcoming appointments."
+                                icon={<CalendarPlus size={24} />}
+                                colorClass="bg-blue-100 text-blue-600"
+                                href='/dashboard/appointments'
+                            />
+                            <ActionCard
                                 title="Check Prescription"
                                 description="Track active medications, dosage instructions, and request pharmacy refills."
                                 icon={<Pill size={24} />}
@@ -134,42 +160,54 @@ const MedicalDashboard = async () => {
                 </div>
 
                 {/* 4. Secondary Information (Timeline/Upcoming) */}
+                {!isDoctor && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
                         <h2 className="text-xl font-bold text-slate-800">Recent Medical History</h2>
                         <div className="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-50 overflow-hidden">
-                            {[
-                                { label: 'Blood Panel', date: 'Oct 24, 2025', status: 'Completed', color: 'text-emerald-500' },
-                                { label: 'General Checkup', date: 'Sep 12, 2025', status: 'Completed', color: 'text-emerald-500' },
-                                { label: 'Flu Vaccination', date: 'Aug 05, 2025', status: 'Archive', color: 'text-slate-400' },
-                            ].map((item, idx) => (
+                            {recentHistory.length > 0 ? recentHistory.map((item, idx) => (
                                 <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                                     <div>
-                                        <p className="font-semibold text-slate-800">{item.label}</p>
-                                        <p className="text-xs text-slate-400">{item.date}</p>
+                                        <p className="font-semibold text-slate-800">Appointment with Dr. {item.doctorname}</p>
+                                        <p className="text-xs text-slate-400">
+                                            {item.timeslot ? format(new Date(item.timeslot), 'MMM dd, yyyy') : (item.requestedat ? format(new Date(item.requestedat), 'MMM dd, yyyy') : 'Unknown Date')}
+                                        </p>
                                     </div>
-                                    <span className={`text-xs font-bold uppercase tracking-wider ${item.color}`}>{item.status}</span>
+                                    <span className={`text-xs font-bold uppercase tracking-wider ${item.status === 'Completed' ? 'text-emerald-500' : 'text-slate-400'}`}>{item.status}</span>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="p-6 text-center text-slate-500 text-sm">
+                                    No recent medical history found.
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
                         <div className="relative z-10">
                             <h3 className="text-lg font-bold mb-2">Next Appointment</h3>
-                            <p className="text-blue-100 text-sm mb-4">You have a session today at 2:00 PM</p>
-                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                                <p className="font-bold">Dr. Sarah Jenkins</p>
-                                <p className="text-xs text-blue-100 uppercase tracking-wide">Cardiologist</p>
-                            </div>
-                            <button className="mt-6 w-full py-2 bg-white text-blue-600 rounded-lg font-bold text-sm hover:bg-blue-50 transition-colors">
-                                Join Telehealth Call
-                            </button>
+                            {nextAppointment ? (
+                                <>
+                                    <p className="text-blue-100 text-sm mb-4">
+                                        {nextAppointment.timeslot ? format(new Date(nextAppointment.timeslot), "MMMM do, yyyy 'at' h:mm a") : 'Date to be assigned'}
+                                    </p>
+                                    <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                                        <p className="font-bold">Dr. {nextAppointment.doctorname}</p>
+                                        <p className="text-xs text-blue-100 uppercase tracking-wide">{nextAppointment.doctordesignation}</p>
+                                    </div>
+                                    <Link href="/dashboard/appointments" className="mt-6 flex w-full justify-center items-center py-2 bg-white text-blue-600 rounded-lg font-bold text-sm hover:bg-blue-50 transition-colors">
+                                        View Details
+                                    </Link>
+                                </>
+                            ) : (
+                                <p className="text-blue-100 text-sm">You have no upcoming appointments.</p>
+                            )}
                         </div>
                         {/* Decorative background circle */}
                         <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500 rounded-full opacity-50"></div>
                     </div>
                 </div>
+                )}
             </main>
         </div>
     );
