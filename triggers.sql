@@ -82,3 +82,60 @@ BEGIN
     RETURN test_count;
 END;
 $$ LANGUAGE plpgsql;
+
+--appointment handling 
+CREATE OR REPLACE FUNCTION add_appointment(pat_id int, sch_id int, appoint_date date) 
+returns varchar as $$
+DECLARE
+    slotcnt int;
+    freeslot time;
+    chosenslot timestamp;
+    eslot time;
+BEGIN
+    with recursive hourslots as(
+        select 
+            starttime as slotstart,
+            starttime + interval '1 hour' as slotend
+        from chamberschedules where scheduleid = sch_id
+        union all
+        select 
+            slotstart + interval '1 hour',
+            slotend + interval '1 hour'
+        from hourslots
+        where slotend + interval '1 hour' <= (select endtime from chamberschedules where scheduleid = sch_id)
+    )
+
+    select count(appointmentid), hs.slotstart, hs.slotend
+    into slotcnt, freeslot, eslot
+    from hourslots hs left join (
+        select * from appointments
+        where scheduleid = sch_id and status ='Scheduled' and
+        date_trunc('day', ESTtime) = date_trunc('day', appoint_date)
+    ) on 
+    hs.slotstart <= esttime::time and hs.slotend > esttime::time
+    group by hs.slotstart, hs.slotend
+    having count(appointmentid) < 10
+    ORDER BY hs.slotstart
+    limit 1;
+    
+    if freeslot is null THEN
+        return 'Failed: No slots available';
+    elsif 1 > (
+        select count(*) from users where userid = pat_id 
+        ) THEN
+        return 'Failed: Patient not found';
+    ELSE
+        chosenslot := freeslot + date_trunc('day', appoint_date);
+        insert into appointments (patientid, scheduleid, esttime)
+        values (pat_id, sch_id, chosenslot);
+        return 'Success: Appointment scheduled at ' || to_char(chosenslot, 'DD Mon YYYY HH24:MI');
+    end if;
+    exception
+        when unique_violation THEN
+            return 'Failed: Appointment already made for this schedule and date';
+END;
+$$ language plpgsql;
+
+SELECT add_appointment(10, 10, date'2026-03-23');
+    
+

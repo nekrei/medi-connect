@@ -268,7 +268,7 @@ create table prescribed_test (
 
 -- chamber schedule
 -- 0 = Sunday, 1 = Monday, ... 6 = Saturday
-create table if not exists doctorchamberschedules (
+create table if not exists chamberschedules (
    scheduleid serial primary key,
    chamberid  int not null
       references chambers ( chamberid )
@@ -282,6 +282,19 @@ create table if not exists doctorchamberschedules (
             weekday )
 );
 
+create table appointments(
+   appointmentid serial primary key,
+   patientid int not null,
+   scheduleid int not null,
+   ESTtime timestamp,
+   status varchar(25) check (status in ('Scheduled', 'Completed', 'Cancelled', 'Denied', 'Pending', 'Absent')) 
+   not null default 'Pending',
+   requestedat timestamp default now(),
+   FOREIGN key (patientid) references users(userid) on delete cascade,
+   foreign key (scheduleid) references chamberschedules(scheduleid)
+);
+alter table appointments
+add constraint unique_appointment UNIQUE (patientid, scheduleid, ESTtime);
 
 
 -- ── Migration: run these if the Doctors table already exists in your DB ───────

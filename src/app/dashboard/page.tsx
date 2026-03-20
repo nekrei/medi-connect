@@ -22,7 +22,7 @@ interface ActionCardProps {
 
 // --- Reusable Components ---
 const ActionCard = ({ title, description, icon, colorClass, href }: ActionCardProps) => (
-    <a
+    <Link
         href={href}
         aria-label={`${title} - ${description}`}
         className="flex flex-col p-6 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left group"
@@ -35,7 +35,7 @@ const ActionCard = ({ title, description, icon, colorClass, href }: ActionCardPr
         <div className="mt-auto flex items-center text-blue-600 font-semibold text-sm">
             Get Started <ChevronRight size={16} className="ml-1" />
         </div>
-    </a>
+    </Link>
 );
 
 // --- Main Dashboard Page ---
@@ -47,6 +47,7 @@ const MedicalDashboard = async () => {
     }
 
     const userName = user.name;
+    const isDoctor = user.role === 'Doctor';
 
     return (
         <div className="min-h-screen bg-slate-50 flex">
@@ -81,27 +82,55 @@ const MedicalDashboard = async () => {
 
                 {/* 3. Core Action Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <ActionCard
-                        title="Check Prescription"
-                        description="Track active medications, dosage instructions, and request pharmacy refills."
-                        icon={<Pill size={24} />}
-                        colorClass="bg-emerald-100 text-emerald-600"
-                        href='/dashboard/check-prescription'
-                    />
-                    <ActionCard
-                        title="Appoint Doctor"
-                        description="Schedule virtual or in-person visits with primary care or specialists."
-                        icon={<CalendarPlus size={24} />}
-                        colorClass="bg-blue-100 text-blue-600"
-                        href='/dashboard/appoint-doctor'
-                    />
-                    <ActionCard
-                        title="Lab Test Results"
-                        description="Securely view your latest blood work, imaging reports, and pathology."
-                        icon={<Microscope size={24} />}
-                        colorClass="bg-purple-100 text-purple-600"
-                        href='#'
-                    />
+                    {isDoctor ? (
+                        <>
+                            <ActionCard
+                                title="My Appointments"
+                                description="View patient appointments and filter them by date, hospital, or chamber schedule."
+                                icon={<CalendarPlus size={24} />}
+                                colorClass="bg-blue-100 text-blue-600"
+                                href='/dashboard/doctor-appointments'
+                            />
+                            <ActionCard
+                                title="Check Prescription"
+                                description="Open prescription records and review past medication plans for your patients."
+                                icon={<Pill size={24} />}
+                                colorClass="bg-emerald-100 text-emerald-600"
+                                href='/dashboard/check-prescription'
+                            />
+                            <ActionCard
+                                title="Lab Test Results"
+                                description="Review diagnostic reports linked to your patient consultations."
+                                icon={<Microscope size={24} />}
+                                colorClass="bg-purple-100 text-purple-600"
+                                href='#'
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <ActionCard
+                                title="Check Prescription"
+                                description="Track active medications, dosage instructions, and request pharmacy refills."
+                                icon={<Pill size={24} />}
+                                colorClass="bg-emerald-100 text-emerald-600"
+                                href='/dashboard/check-prescription'
+                            />
+                            <ActionCard
+                                title="Appoint Doctor"
+                                description="Schedule virtual or in-person visits with primary care or specialists."
+                                icon={<CalendarPlus size={24} />}
+                                colorClass="bg-blue-100 text-blue-600"
+                                href='/dashboard/appoint-doctor'
+                            />
+                            <ActionCard
+                                title="Lab Test Results"
+                                description="Securely view your latest blood work, imaging reports, and pathology."
+                                icon={<Microscope size={24} />}
+                                colorClass="bg-purple-100 text-purple-600"
+                                href='#'
+                            />
+                        </>
+                    )}
                 </div>
 
                 {/* 4. Secondary Information (Timeline/Upcoming) */}

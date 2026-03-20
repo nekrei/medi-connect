@@ -23,6 +23,7 @@ export default async function DashboardLayout({
 }>) {
     const user = await getCurrentUser();
     const isAdmin = user?.role === "Admin";
+    const isDoctor = user?.role === "Doctor";
 
     return (
         <div className="min-h-screen bg-slate-50 lg:flex">
@@ -51,6 +52,14 @@ export default async function DashboardLayout({
                             className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                         >
                             Admin Panel
+                        </Link>
+                    ) : null}
+                    {isDoctor ? (
+                        <Link
+                            href="/dashboard/doctor-appointments"
+                            className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                        >
+                            My Appointments
                         </Link>
                     ) : null}
                 </nav>
