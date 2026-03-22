@@ -418,7 +418,12 @@ export async function confirmAppointment(appointmentId: number): Promise<string>
             'SELECT confirm_appointment($1);',
             [appointmentId]
         );
+        console.log("appointment : ", appointmentId);
+        await client.query('COMMIT');
         return res.rows[0].confirm_appointment ?? 'Failed: Could not confirm appointment';
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
     } finally {
         client.release();
 

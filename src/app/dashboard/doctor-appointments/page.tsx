@@ -63,6 +63,17 @@ export default function DoctorAppointmentsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
 
+    const handleUpdateStatus = async (appointmentId: number, status: AppointmentRow['status']) => {
+        try {
+            await setAppointmentStatusAction(appointmentId, status);
+            setAppointments(prev => prev.map(app => 
+                app.appointmentid === appointmentId ? { ...app, status } : app
+            ));
+        } catch (error) {
+            console.error("Failed to update status", error);
+        }
+    };
+
     useEffect(() => {
         let active = true;
 
@@ -260,13 +271,13 @@ export default function DoctorAppointmentsPage() {
                                             {appointment.status === 'Pending' && (
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        onClick={() => setAppointmentStatusAction(appointment.appointmentid, 'Scheduled')}
+                                                        onClick={() => handleUpdateStatus(appointment.appointmentid, 'Scheduled')}
                                                         className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-xs text-green-700 transition hover:bg-green-100 font-medium"
                                                     >
                                                         <CheckCircle2 size={14} /> Confirm
                                                     </button>
                                                     <button
-                                                        onClick={() => setAppointmentStatusAction(appointment.appointmentid, 'Denied')}
+                                                        onClick={() => handleUpdateStatus(appointment.appointmentid, 'Denied')}
                                                         className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-100 font-medium"
                                                     >
                                                         <XCircle size={14} /> Deny

@@ -23,9 +23,21 @@ interface PatientAppointmentsClientProps {
 type FilterType = 'all' | 'upcoming' | 'past';
 
 export default function PatientAppointmentsClient({ initialAppointments }: PatientAppointmentsClientProps) {
+    const [appointments, setAppointments] = useState(initialAppointments);
     const [filter, setFilter] = useState<FilterType>('all');
 
-    const filteredAppointments = initialAppointments.filter(app => {
+    const handleCancel = async (id: number) => {
+        try {
+            await cancelPatientAppointment(id);
+            setAppointments(prev => prev.map(app => 
+                app.appointmentid === id ? { ...app, status: 'Cancelled' as any } : app
+            ));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const filteredAppointments = appointments.filter(app => {
         if (filter === 'all') return true;
         if (filter === 'upcoming') {
             return app.status === 'Pending' || app.status === 'Scheduled';
@@ -107,7 +119,7 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                                     <div className="flex items-center gap-3">
                                         {(app.status === 'Pending' || app.status === 'Scheduled') && (
                                             <button 
-                                                onClick={async () => await cancelPatientAppointment(app.appointmentid)}
+                                                onClick={() => handleCancel(app.appointmentid)}
                                                 className="text-red-600 hover:bg-red-50 px-3 py-1 font-semibold rounded-md text-sm border border-red-200 transition-colors"
                                             >
                                                 Cancel

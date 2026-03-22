@@ -173,7 +173,7 @@ create or replace function status_update_checker() returns trigger as $$
 begin
     if tg_op = 'INSERT' or (tg_op = 'UPDATE' and new.status in ('Cancelled', 'Scheduled')) THEN
         if now()::timestamp > (
-        select ((new.appoint_date + starttime) - interval '3 hours')
+        select ((new.appointmentdate + starttime) - interval '3 hours')
         from chamberschedules where scheduleid = new.scheduleid) then
             RAISE SQLSTATE '23525'
             using message = 'Failed: Appointment must be ' || new.status || ' at least 3 hours prior';
