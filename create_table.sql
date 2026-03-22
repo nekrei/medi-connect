@@ -287,6 +287,7 @@ create table appointments(
    patientid int not null,
    scheduleid int not null,
    ESTtime timestamp,
+   appointmentdate date check appointmentdate >= current_date,
    status varchar(25) check (status in ('Scheduled', 'Completed', 'Cancelled', 'Denied', 'Pending', 'Absent')) 
    not null default 'Pending',
    requestedat timestamp default now(),
@@ -294,7 +295,8 @@ create table appointments(
    foreign key (scheduleid) references chamberschedules(scheduleid)
 );
 alter table appointments
-add constraint unique_appointment UNIQUE (patientid, scheduleid, ESTtime);
+add constraint unique_appointment UNIQUE (patientid, scheduleid, appointmentdate);
+
 
 
 -- ── Migration: run these if the Doctors table already exists in your DB ───────

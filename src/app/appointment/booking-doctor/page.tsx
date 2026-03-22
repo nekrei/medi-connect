@@ -17,6 +17,10 @@ import {
     UserRound,
 } from "lucide-react";
 
+import { fetchDoctorSchedules, createPatientAppointment } from "./actions";
+import { Schedule } from "@/lib/repositories/appointment-repository";
+import { useRouter } from "next/navigation";
+
 type CalendarDate = {
     iso: string;
     dateNumber: number;
@@ -89,7 +93,9 @@ function getInitials(name: string) {
 
 function BookingDoctorContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
 
+    const doctorId = searchParams.get("doctorId");
     const doctorName = searchParams.get("name") ?? "Dr. Munira Zebin Kuasha";
     const specialization = searchParams.get("specialization") ?? "Dentistry";
     const hospitalName = searchParams.get("hospital") ?? "BRAC Healthcare Medical Center";
@@ -106,7 +112,27 @@ function BookingDoctorContent() {
     const [patientType, setPatientType] = useState(PATIENT_TYPES[0]);
     const [consultationType, setConsultationType] = useState(CONSULTATION_TYPES[0]);
     const [selectedDate, setSelectedDate] = useState(firstAvailableDate);
-    const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
+    const [isBooking, setIsBooking] = useState(false);
+
+    useEffect(() => {
+        if (!doctorId) return;
+        fetchDoctorSchedules(parseInt(doctorId, 10)).then(setSchedules);
+    }, [doctorId]);
+
+    const handleBooking = async () => {
+        if (!doctorId || !selectedScheduleId || !selectedDate) return;
+        try {
+            setIsBooking(true);
+            await createPatientAppointment(parseInt(doctorId, 10), selectedScheduleId, selectedDate);
+            router.push('/dashboard/appointments');
+        } catch (error) {
+            console.error("Failed to book appointment", error);
+        } finally {
+            setIsBooking(false);
+        }
+    };
 
     const selectedCalendarDate = calendarDates.find((date) => date.iso === selectedDate) ?? calendarDates[0];
 
@@ -281,7 +307,7 @@ function BookingDoctorContent() {
                                         type="button"
                                         onClick={() => {
                                             setSelectedDate(date.iso);
-                                            setSelectedSlot(null);
+                                            setSelectedScheduleId(null);
                                         }}
                                         className={[
                                             "rounded-2xl border px-3 py-4 text-left transition",
@@ -304,51 +330,52 @@ function BookingDoctorContent() {
                             })}
                         </div>
 
-                        <div className="mt-8 grid gap-4 lg:grid-cols-2">
-                            {[
-                                { title: "Morning", slots: MORNING_SLOTS },
-                                { title: "Evening", slots: EVENING_SLOTS },
-                            ].map((period) => (
-                                <div key={period.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                            <p className="text-lg font-bold text-slate-900">{period.title}</p>
-                                            <p className="text-sm text-slate-500">
-                                                {isDateBookable ? `${period.slots.length} slots available` : "No slot available"}
-                                            </p>
-                                        </div>
-                                        <Clock3 className="text-blue-600" size={18} />
+                        <div className="mt-8">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-lg font-bold text-slate-900">Available Schedules</p>
+                                        <p className="text-sm text-slate-500">
+                                            {isDateBookable ? "Select a chamber schedule" : "No schedules available"}
+                                        </p>
                                     </div>
+                                    <Clock3 className="text-blue-600" size={18} />
+                                </div>
 
-                                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                        {isDateBookable ? (
-                                            period.slots.map((slot) => {
-                                                const slotValue = `${selectedDate}-${period.title}-${slot}`;
-
+                                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    {isDateBookable ? (
+                                        schedules
+                                            .filter(s => s.week === selectedCalendarDate?.weekdayNumber)
+                                            .map((schedule) => {
                                                 return (
                                                     <button
-                                                        key={slotValue}
+                                                        key={schedule.scheduleid}
                                                         type="button"
-                                                        onClick={() => setSelectedSlot(slotValue)}
+                                                        onClick={() => setSelectedScheduleId(schedule.scheduleid)}
                                                         className={[
-                                                            "rounded-xl border px-3 py-3 text-sm font-semibold transition",
-                                                            selectedSlot === slotValue
+                                                            "flex flex-col gap-1 rounded-xl border px-4 py-3 text-left text-sm transition",
+                                                            selectedScheduleId === schedule.scheduleid
                                                                 ? "border-blue-600 bg-blue-600 text-white"
                                                                 : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600",
                                                         ].join(" ")}
                                                     >
-                                                        {slot}
+                                                        <span className="font-bold text-base">{schedule.starttime} - {schedule.endtime}</span>
+                                                        <span className="text-xs opacity-90">{schedule.chamberhosp}</span>
                                                     </button>
                                                 );
-                                            })
-                                        ) : (
-                                            <div className="col-span-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
-                                                This doctor is unavailable on the selected date.
-                                            </div>
-                                        )}
-                                    </div>
+                                        })
+                                    ) : (
+                                        <div className="col-span-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
+                                            This doctor is unavailable on the selected date.
+                                        </div>
+                                    )}
+                                    {isDateBookable && schedules.filter(s => s.week === selectedCalendarDate?.weekdayNumber).length === 0 && (
+                                        <div className="col-span-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
+                                            No schedules found for this day.
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -390,18 +417,24 @@ function BookingDoctorContent() {
                                 <p className="font-bold text-slate-900">Selected schedule</p>
                                 <p className="mt-2">{dateHeading}</p>
                                 <p className="mt-1 font-semibold text-blue-700">
-                                    {selectedSlot ? selectedSlot.split("-").slice(-2).join(" ") : "Choose an available time slot"}
+                                    {selectedScheduleId
+                                        ? (() => {
+                                            const s = schedules.find(x => x.scheduleid === selectedScheduleId);
+                                            return s ? `${s.starttime} - ${s.endtime}` : "Unknown";
+                                        })()
+                                        : "Choose an available schedule"}
                                 </p>
                             </div>
                         </div>
 
                         <button
                             type="button"
-                            disabled={!selectedSlot || !isDateBookable}
+                            onClick={handleBooking}
+                            disabled={!selectedScheduleId || !isDateBookable || isBooking}
                             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
                             <CheckCircle2 size={18} />
-                            Confirm appointment request
+                            {isBooking ? "Confirming..." : "Confirm appointment request"}
                         </button>
                     </div>
 

@@ -59,6 +59,22 @@ export default async function DashboardLayout({
                             href="/dashboard/doctor-appointments"
                             className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                         >
+                            My Doctor Schedule
+                        </Link>
+                    ) : null}
+                    {isDoctor ? (
+                        <Link
+                            href="/dashboard/appointments"
+                            className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                        >
+                            My Patient Appointments
+                        </Link>
+                    ) : null}
+                    {(!isDoctor && !isAdmin) ? (
+                        <Link
+                            href="/dashboard/appointments"
+                            className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                        >
                             My Appointments
                         </Link>
                     ) : null}

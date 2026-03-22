@@ -51,7 +51,7 @@ const MedicalDashboard = async () => {
 
     const userName = user.name;
     const isDoctor = user.role === 'Doctor';
-    const patientAppointments = !isDoctor ? await getAppointmentByPatient(parseInt(user.id, 10)) : [];
+    const patientAppointments = await getAppointmentByPatient(parseInt(user.id, 10));
     
     const upcomingAppointments = patientAppointments.filter(a => a.status === 'Pending' || a.status === 'Scheduled');
     const pastAppointments = patientAppointments.filter(a => a.status !== 'Pending' && a.status !== 'Scheduled');
@@ -104,22 +104,36 @@ const MedicalDashboard = async () => {
                     {isDoctor ? (
                         <>
                             <ActionCard
-                                title="My Appointments"
-                                description="View patient appointments and filter them by date, hospital, or chamber schedule."
+                                title="My Doctor Schedule"
+                                description="View your patient appointments and filter them by date, hospital, or chamber schedule."
                                 icon={<CalendarPlus size={24} />}
                                 colorClass="bg-blue-100 text-blue-600"
                                 href='/dashboard/doctor-appointments'
                             />
                             <ActionCard
+                                title="My Patient Appointments"
+                                description="View the past and upcoming appointments you made as a patient."
+                                icon={<CalendarPlus size={24} />}
+                                colorClass="bg-indigo-100 text-indigo-600"
+                                href='/dashboard/appointments'
+                            />
+                            <ActionCard
+                                title="Appoint Doctor"
+                                description="Schedule virtual or in-person visits with primary care or specialists."
+                                icon={<CalendarPlus size={24} />}
+                                colorClass="bg-blue-100 text-blue-600"
+                                href='/dashboard/appoint-doctor'
+                            />
+                            <ActionCard
                                 title="Check Prescription"
-                                description="Open prescription records and review past medication plans for your patients."
+                                description="Open prescription records and review past medication plans."
                                 icon={<Pill size={24} />}
                                 colorClass="bg-emerald-100 text-emerald-600"
                                 href='/dashboard/check-prescription'
                             />
                             <ActionCard
                                 title="Lab Test Results"
-                                description="Review diagnostic reports linked to your patient consultations."
+                                description="Review diagnostic reports linked to consultations."
                                 icon={<Microscope size={24} />}
                                 colorClass="bg-purple-100 text-purple-600"
                                 href='#'
@@ -160,7 +174,6 @@ const MedicalDashboard = async () => {
                 </div>
 
                 {/* 4. Secondary Information (Timeline/Upcoming) */}
-                {!isDoctor && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
                         <h2 className="text-xl font-bold text-slate-800">Recent Medical History</h2>
@@ -207,7 +220,6 @@ const MedicalDashboard = async () => {
                         <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500 rounded-full opacity-50"></div>
                     </div>
                 </div>
-                )}
             </main>
         </div>
     );

@@ -14,6 +14,7 @@ import {
     Clock3,
     Ban
 } from 'lucide-react';
+import { cancelPatientAppointment } from './actions';
 
 interface PatientAppointmentsClientProps {
     initialAppointments: PatientAppointmentRow[];
@@ -103,9 +104,19 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                                             <p className="text-sm text-slate-500">{app.doctordesignation}</p>
                                         </div>
                                     </div>
-                                    <div className={`px-3 py-1 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${getStatusColor(app.status)}`}>
-                                        {getStatusIcon(app.status)}
-                                        {app.status}
+                                    <div className="flex items-center gap-3">
+                                        {(app.status === 'Pending' || app.status === 'Scheduled') && (
+                                            <button 
+                                                onClick={async () => await cancelPatientAppointment(app.appointmentid)}
+                                                className="text-red-600 hover:bg-red-50 px-3 py-1 font-semibold rounded-md text-sm border border-red-200 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                        <div className={`px-3 py-1 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${getStatusColor(app.status)}`}>
+                                            {getStatusIcon(app.status)}
+                                            {app.status}
+                                        </div>
                                     </div>
                                 </div>
 

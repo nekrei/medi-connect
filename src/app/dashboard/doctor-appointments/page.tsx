@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Clock3, Hospital, RefreshCw } from 'lucide-react';
+import { CalendarDays, Clock3, Hospital, RefreshCw, CheckCircle2, XCircle, Pill } from 'lucide-react';
+import { setAppointmentStatusAction } from './actions';
 
 type AppointmentRow = {
     appointmentid: number;
@@ -251,9 +252,37 @@ export default function DoctorAppointmentsPage() {
                                             </p>
                                         </div>
 
-                                        <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appointment.status]}`}>
-                                            {appointment.status}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-3 text-right">
+                                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appointment.status]}`}>
+                                                {appointment.status}
+                                            </span>
+
+                                            {appointment.status === 'Pending' && (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setAppointmentStatusAction(appointment.appointmentid, 'Scheduled')}
+                                                        className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-xs text-green-700 transition hover:bg-green-100 font-medium"
+                                                    >
+                                                        <CheckCircle2 size={14} /> Confirm
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setAppointmentStatusAction(appointment.appointmentid, 'Denied')}
+                                                        className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-100 font-medium"
+                                                    >
+                                                        <XCircle size={14} /> Deny
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {appointment.status === 'Scheduled' && (
+                                                <Link
+                                                    href={`/dashboard/doctor-appointments/${appointment.appointmentid}/prescribe`}
+                                                    className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700 transition hover:bg-blue-100 font-medium"
+                                                >
+                                                    <Pill size={14} /> Write Prescription
+                                                </Link>
+                                            )}
+                                        </div>
                                     </div>
                                 </article>
                             );

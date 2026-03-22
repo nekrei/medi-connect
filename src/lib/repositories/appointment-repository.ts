@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { pool } from '@/lib/db';
+import { number } from 'zod';
 
 type AppointmentStatus = 'Scheduled' | 'Completed' | 'Cancelled' | 'Denied' | 'Pending' | 'Absent';
 
@@ -371,23 +372,6 @@ export async function listDoctorAppointmentSchedules(doctorId: number): Promise<
     }));
 }
 
-export async function updateAppointmentStatus(appointmentId: number, newStatus: AppointmentStatus): Promise<void> {
-    const client = await pool.connect();
-    try {
-        await client.query('begin');
-        await client.query(
-            'update appointments set status = $1 where appointmentid = $2',
-            [newStatus, appointmentId]
-        );
-        await client.query('commit');
-    } catch (error) {
-        await client.query('rollback');
-        throw error;
-    } finally {
-        client.release();
-    }
-}
-
 export type PatientAppointmentRow = {
     appointmentid: number,
     doctorname: string,
@@ -426,3 +410,38 @@ export async function getAppointmentByPatient(patientId : number):
         client.release();
     }
 }
+export async function confirmAppointment(appointmentId: number): Promise<string> {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const res = await client.query(
+            'SELECT confirm_appointment($1);',
+            [appointmentId]
+        );
+        return res.rows[0].confirm_appointment ?? 'Failed: Could not confirm appointment';
+    } finally {
+        client.release();
+
+    }
+}
+export async function updateAppointmentStatus(appointmentId: number, newStatus: AppointmentStatus): Promise<void> {
+    if (newStatus === 'Scheduled') {
+        await confirmAppointment(appointmentId);
+        return;
+    }
+    const client = await pool.connect();
+    try {
+        await client.query('begin');
+        await client.query(
+            'update appointments set status = $1 where appointmentid = $2',
+            [newStatus, appointmentId]
+        );
+        await client.query('commit');
+    } catch (error) {
+        await client.query('rollback');
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+

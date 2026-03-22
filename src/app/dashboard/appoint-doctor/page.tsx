@@ -571,6 +571,7 @@ export default function AppointDoctorPage() {
                                             href={{
                                                 pathname: "/appointment/booking-doctor",
                                                 query: {
+                                                    doctorId: doctor.doctorid,
                                                     name: doctor.name,
                                                     hospital: doctor.hospital,
                                                     specialization: Array.isArray(doctor.specialization)

@@ -14,10 +14,6 @@ export default async function PatientAppointmentsPage() {
         redirect('/login');
     }
 
-    if (user.role === 'Doctor') {
-        redirect('/dashboard');
-    }
-
     const appointments = await getAppointmentByPatient(parseInt(user.id, 10));
 
     return (
