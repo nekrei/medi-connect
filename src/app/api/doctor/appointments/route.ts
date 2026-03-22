@@ -1,0 +1,67 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+import { getCurrentUser } from '@/lib/auth/current-user';
+import {
+    listDoctorAppointmentHospitals,
+    listDoctorAppointments,
+    listDoctorAppointmentSchedules,
+} from '@/lib/repositories/appointment-repository';
+
+const querySchema = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    hospital: z.string().trim().min(1).optional(),
+    scheduleId: z.coerce.number().int().positive().optional(),
+});
+
+export async function GET(request: Request) {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+        return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (currentUser.role !== 'Doctor') {
+        return NextResponse.json({ status: 'error', message: 'Forbidden' }, { status: 403 });
+    }
+
+    const doctorId = Number(currentUser.id);
+    if (!Number.isFinite(doctorId)) {
+        return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const searchParams = new URL(request.url).searchParams;
+    const rawQuery = {
+        date: searchParams.get('date') || undefined,
+        hospital: searchParams.get('hospital') || undefined,
+        scheduleId: searchParams.get('scheduleId') || undefined,
+    };
+
+    const parsed = querySchema.safeParse(rawQuery);
+    if (!parsed.success) {
+        return NextResponse.json(
+            { status: 'error', message: 'Invalid query parameters', errors: parsed.error.issues },
+            { status: 400 }
+        );
+    }
+
+    const [appointments, hospitals, schedules] = await Promise.all([
+        listDoctorAppointments({
+            doctorId,
+            date: parsed.data.date ?? null,
+            hospital: parsed.data.hospital ?? null,
+            scheduleId: parsed.data.scheduleId ?? null,
+        }),
+        listDoctorAppointmentHospitals(doctorId),
+        listDoctorAppointmentSchedules(doctorId),
+    ]);
+
+    return NextResponse.json({
+        status: 'success',
+        data: appointments,
+        filters: {
+            hospitals,
+            schedules,
+        },
+    });
+}

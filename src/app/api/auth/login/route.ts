@@ -50,8 +50,8 @@ export async function POST(request: Request) {
             sub: user.userid.toString(),
             email: user.email,
             name: `${user.firstname} ${user.lastname}`,
-            role: user.role,
-            ...(doctorStatus !== undefined && { doctorStatus }),
+            role: user.role as 'Admin' | 'Doctor' | 'User',
+            ...(doctorStatus !== undefined && { doctorStatus: doctorStatus as 'Approved' | 'Pending' | 'Rejected' }),
         });
 
         const response = NextResponse.json({

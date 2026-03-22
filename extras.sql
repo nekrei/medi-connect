@@ -93,3 +93,4 @@ BEGIN
     RETURN available_days;
 END;
 $$ LANGUAGE plpgsql;
+

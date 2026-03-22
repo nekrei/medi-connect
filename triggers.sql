@@ -82,3 +82,109 @@ BEGIN
     RETURN test_count;
 END;
 $$ LANGUAGE plpgsql;
+
+--appointment handling 
+CREATE OR REPLACE FUNCTION confirm_appointment(appointment_id int) 
+returns varchar as $$
+DECLARE
+    pat_id int;
+    sch_id int;
+    appoint_date date;
+    slotcnt int;
+    freeslot time;
+    chosenslot timestamp;
+    eslot time;
+BEGIN
+    if 1>(select count(*) from appointments where appointmentid = appointment_id) THEN
+        return 'Failed: Appointment not found';
+    end if;
+    select patientid, scheduleid, appointmentdate 
+    into pat_id, sch_id, appoint_date
+    from appointments where appointmentid = appointment_id;
+
+
+    perform status 
+    from appointments 
+    where scheduleid = sch_id and appointmentdate = appoint_date
+    for UPDATE;
+
+    with recursive hourslots as(
+        select 
+            starttime as slotstart,
+            starttime + interval '1 hour' as slotend
+        from chamberschedules where scheduleid = sch_id
+        union all
+        select 
+            slotstart + interval '1 hour',
+            slotend + interval '1 hour'
+        from hourslots
+        where slotend + interval '1 hour' <= (select endtime from chamberschedules where scheduleid = sch_id)
+    )
+
+    select count(appointmentid), hs.slotstart, hs.slotend
+    into slotcnt, freeslot, eslot
+    from hourslots hs left join (
+        select * from appointments
+        where scheduleid = sch_id and status ='Scheduled' and
+        appointmentdate = appoint_date
+    ) on 
+    hs.slotstart <= esttime::time and hs.slotend > esttime::time
+    group by hs.slotstart, hs.slotend
+    having count(appointmentid) < 10
+    ORDER BY hs.slotstart
+    limit 1;
+    
+    if freeslot is null THEN
+        return 'Failed: No slots available';
+    ELSE
+        chosenslot := freeslot + date_trunc('day', appoint_date);
+        update appointments set esttime = chosenslot, status = 'Scheduled' 
+        where appointmentid = appointment_id;
+        return 'Success: Appointment scheduled at ' || to_char(chosenslot, 'DD Mon YYYY HH24:MI');
+    end if;
+exception
+    when sqlstate '23525' then
+        return sqlerrm;
+END;
+$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION add_appointment(pat_id int, sch_id int, appoint_date date)
+RETURNS varchar as $$
+DECLARE
+BEGIN
+    if 1 > (select count(*) from chamberschedules where scheduleid = sch_id) THEN
+        return 'Failed: Schedule not found';
+    elsif 1 > (select count(*) from users where userid = pat_id) THEN
+        return 'Failed: Patient not found';
+    end if;
+    insert into appointments (patientid, scheduleid, appointmentdate) values (pat_id, sch_id, appoint_date);
+    return 'Success: Appointment pending approval';
+exception
+    when unique_violation then
+        return 'Failed: Appointment already made for this schedule';
+    when sqlstate '23525' then
+        return sqlerrm;
+END;
+$$ language plpgsql;
+
+select confirm_appointment(24);
+
+create or replace function status_update_checker() returns trigger as $$
+begin
+    if tg_op = 'INSERT' or (tg_op = 'UPDATE' and new.status in ('Cancelled', 'Scheduled')) THEN
+        if now()::timestamp > (
+        select ((new.appointmentdate + starttime) - interval '3 hours')
+        from chamberschedules where scheduleid = new.scheduleid) then
+            RAISE SQLSTATE '23525'
+            using message = 'Failed: Appointment must be ' || new.status || ' at least 3 hours prior';
+        end if;
+    end if;
+    return new;
+end;
+$$ language plpgsql;
+
+create or replace trigger appointment_status_update_checker
+before insert or update of status on appointments
+for each ROW
+execute function status_update_checker();
+

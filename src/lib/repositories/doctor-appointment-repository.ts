@@ -4,6 +4,7 @@ import { sql } from '@/lib/db';
 
 
 export type DoctorSearchRow = {
+    doctorid: number;
     name: string;
     specialization: string;
     hospital: string;
@@ -23,6 +24,7 @@ export async function searchDoctors(params: {
     
     const rows = (await sql`
         SELECT
+            DR.DOCTORID AS doctorid,
             U.FIRSTNAME || ' ' || U.LASTNAME AS name,
             get_doctor_specializations(DR.DOCTORID) AS specialization,
             H.HOSPITALNAME AS hospital,
