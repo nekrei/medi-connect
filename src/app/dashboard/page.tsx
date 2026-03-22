@@ -2,6 +2,7 @@ import {
     Pill,
     CalendarPlus,
     Microscope,
+    Search,
     Bell,
     User,
     ChevronRight,
@@ -80,7 +81,7 @@ const MedicalDashboard = async () => {
                 </header>
 
                 {/* 3. Core Action Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-10">
                     <ActionCard
                         title="Check Prescription"
                         description="Track active medications, dosage instructions, and request pharmacy refills."
@@ -97,10 +98,17 @@ const MedicalDashboard = async () => {
                     />
                     <ActionCard
                         title="Lab Test Results"
-                        description="Securely view your latest blood work, imaging reports, and pathology."
+                        description="Track pending prescribed tests and upload reports as PDF or photos."
                         icon={<Microscope size={24} />}
                         colorClass="bg-purple-100 text-purple-600"
-                        href='#'
+                        href='/dashboard/check-reports'
+                    />
+                    <ActionCard
+                        title="Search Tests"
+                        description="Find diagnostic centers by test availability, location, and price range."
+                        icon={<Search size={24} />}
+                        colorClass="bg-cyan-100 text-cyan-700"
+                        href='/dashboard/search-tests'
                     />
                 </div>
 
