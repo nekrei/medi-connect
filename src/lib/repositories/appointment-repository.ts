@@ -449,4 +449,67 @@ export async function updateAppointmentStatus(appointmentId: number, newStatus: 
         client.release();
     }
 }
+export type slot = {
+    cnt: number;
+    starttime: string;
+    endtime: string;
+}
+export async function checkSlotCount(scheduleId: number, appointDate: string):
+    Promise<slot[]> {
+        const client = await pool.connect();
+        try {
+            await client.query('begin');
+            const res = await client.query(
+                `with recursive hourslots as(
+                    select 
+                    starttime as slotstart,
+                    starttime + interval '1 hour' as slotend
+                    from chamberschedules where scheduleid = $1
+                    union all
+                    select 
+                    slotstart + interval '1 hour',
+                    slotend + interval '1 hour'
+                    from hourslots
+                    where slotend + interval '1 hour' <= (select endtime from chamberschedules where scheduleid = $1)
+                )
 
+                select count(appointmentid) as cnt, hs.slotstart, hs.slotend
+                from hourslots hs left join (
+                    select * from appointments
+                    where scheduleid = $1 and status ='Scheduled' and
+                    appointmentdate = $2::date   
+                ) on 
+                hs.slotstart <= esttime::time and hs.slotend > esttime::time
+                group by hs.slotstart, hs.slotend
+                having count(appointmentid) < 10
+                ORDER BY hs.slotstart;`,
+                [scheduleId, appointDate]
+            );
+            client.query('commit');
+            return res.rows.map((row) => ({
+                cnt: row.cnt,
+                starttime: row.slotstart,
+                endtime: row.slotend,
+            }));
+        }catch (error) {
+            await client.query('rollback');
+            throw error;
+        } finally {            
+            client.release();
+        }
+    }
+
+export async function getwaitingcount(scheduleId: number, appointDate: string): Promise<number> {
+    const client = await pool.connect();
+    try {
+        const res = await client.query<{ cnt: number }>(
+            `select count(appointmentid) as cnt
+             from appointments
+             where scheduleid = $1 and status = 'Pending' and appointmentdate = $2::date`,
+            [scheduleId, appointDate]
+        );
+        return res.rows[0]?.cnt ?? 0;
+    } finally {
+        client.release();
+    }
+}

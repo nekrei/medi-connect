@@ -37,3 +37,28 @@ insert into hospitals (locationid, hospitalname) values (4, 'C Hospital');
 -- after insert on rejectedappointments
 -- for each row
 -- EXECUTE FUNCTION rej_appointment();
+
+  
+with recursive hourslots as(
+                    select 
+                    starttime as slotstart,
+                    starttime + interval '1 hour' as slotend
+                    from chamberschedules where scheduleid = 10
+                    union all
+                    select 
+                    slotstart + interval '1 hour',
+                    slotend + interval '1 hour'
+                    from hourslots
+                    where slotend + interval '1 hour' <= (select endtime from chamberschedules where scheduleid = 10)
+                )
+
+                select count(appointmentid) as cnt, hs.slotstart, hs.slotend
+                from hourslots hs left join (
+                    select * from appointments
+                    where scheduleid = 10 and status ='Scheduled' and
+                    appointmentdate = '2026-03-25'::date   
+                ) on 
+                hs.slotstart <= esttime::time and hs.slotend > esttime::time
+                group by hs.slotstart, hs.slotend
+                having count(appointmentid) < 10
+                ORDER BY hs.slotstart;

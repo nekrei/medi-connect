@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import {
     ArrowLeft,
@@ -17,8 +17,8 @@ import {
     UserRound,
 } from "lucide-react";
 
-import { fetchDoctorSchedules, createPatientAppointment } from "./actions";
-import { Schedule } from "@/lib/repositories/appointment-repository";
+import { fetchDoctorSchedules, createPatientAppointment, fetchScheduleAvailability } from "./actions";
+import { Schedule, slot } from "@/lib/repositories/appointment-repository";
 import { useRouter } from "next/navigation";
 
 type CalendarDate = {
@@ -65,9 +65,15 @@ function buildCalendar(availableDays: Set<number>) {
     return Array.from({ length: 21 }, (_, index) => {
         const date = new Date(today);
         date.setDate(today.getDate() + index);
+        
+        // Correctly format to local ISO date string, bypassing UTC timezone shifts
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const localIsoDate = `${year}-${month}-${day}`;
 
         return {
-            iso: date.toISOString().split("T")[0],
+            iso: localIsoDate,
             dateNumber: date.getDate(),
             monthLabel: monthFormatter.format(date),
             weekdayShort: weekdayFormatter.format(date),
@@ -115,11 +121,41 @@ function BookingDoctorContent() {
     const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
     const [isBooking, setIsBooking] = useState(false);
+    
+    // State to store availability data for the currently selected schedule and date
+    const [availability, setAvailability] = useState<{ slots: slot[], pendingCount: number } | null>(null);
+    const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
 
     useEffect(() => {
         if (!doctorId) return;
         fetchDoctorSchedules(parseInt(doctorId, 10)).then(setSchedules);
     }, [doctorId]);
+
+    // Fetch availability when schedule or date changes
+    useEffect(() => {
+        if (!selectedScheduleId || !selectedDate) {
+            setAvailability(null);
+            return;
+        }
+
+        let isMounted = true;
+        setIsLoadingAvailability(true);
+
+        fetchScheduleAvailability(selectedScheduleId, selectedDate)
+            .then(data => {
+                if (isMounted) {
+                    setAvailability(data);
+                }
+            })
+            .catch(err => console.error("Failed to fetch availability", err))
+            .finally(() => {
+                if (isMounted) setIsLoadingAvailability(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [selectedScheduleId, selectedDate]);
 
     const handleBooking = async () => {
         if (!doctorId || !selectedScheduleId || !selectedDate) return;
@@ -361,6 +397,23 @@ function BookingDoctorContent() {
                                                     >
                                                         <span className="font-bold text-base">{schedule.starttime} - {schedule.endtime}</span>
                                                         <span className="text-xs opacity-90">{schedule.chamberhosp}</span>
+                                                        
+                                                        {selectedScheduleId === schedule.scheduleid && availability && (
+                                                            <div className="mt-2 pt-2 border-t border-blue-400/50 text-xs">
+                                                                <p>{availability.slots.length > 0 ? "Booked slots:" : "No scheduled slots yet."}</p>
+                                                                <ul className="mt-1 space-y-1">
+                                                                    {availability.slots.map((slot, idx) => (
+                                                                        <li key={idx}>
+                                                                             {slot.starttime.substring(0,5)} - {slot.endtime.substring(0,5)}: {slot.cnt} booked
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                                <p className="mt-1.5 font-semibold text-blue-100">{availability.pendingCount} pending requests</p>
+                                                            </div>
+                                                        )}
+                                                        {selectedScheduleId === schedule.scheduleid && isLoadingAvailability && (
+                                                            <span className="mt-2 text-xs italic opacity-80">Loading availability...</span>
+                                                        )}
                                                     </button>
                                                 );
                                         })

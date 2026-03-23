@@ -1,11 +1,19 @@
 'use server';
 
-import { getScheduleByDoctor, addAppointment } from '@/lib/repositories/appointment-repository';
+import { getScheduleByDoctor, addAppointment, checkSlotCount, getwaitingcount } from '@/lib/repositories/appointment-repository';
 import { getCurrentUser } from '@/lib/auth/current-user';
 
 export async function fetchDoctorSchedules(doctorId: number) {
     const schedules = await getScheduleByDoctor(doctorId);
     return schedules;
+}
+
+export async function fetchScheduleAvailability(scheduleId: number, date: string) {
+    const [slots, pendingCount] = await Promise.all([
+        checkSlotCount(scheduleId, date),
+        getwaitingcount(scheduleId, date)
+    ]);
+    return { slots, pendingCount };
 }
 
 export async function createPatientAppointment(doctorId: number, scheduleId: number, appointDate: string) {
