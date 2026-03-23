@@ -24,3 +24,59 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 4mm 8mm 8mm 8mm;
+  }
+
+  html,
+  body {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 20;
+    background: #ffffff !important;
+  }
+
+  main {
+    padding: 10px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+  }
+
+  main> :not(.prescription-modal-overlay) {
+    display: none !important;
+  }
+
+  .prescription-modal-overlay {
+    position: static !important;
+    inset: auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .prescription-print-root {
+    position: static !important;
+    width: 190mm !important;
+    max-width: 190mm !important;
+    margin-top: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  .no-print,
+  .prescription-modal-header {
+    display: none !important;
+  }
+}

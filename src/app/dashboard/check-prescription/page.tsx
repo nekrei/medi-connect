@@ -82,6 +82,11 @@ export default function CheckPrescriptionPage() {
         window.print();
     };
 
+    const closePrescriptionModal = () => {
+        setSelectedPrescription(null);
+        setSelectedPrescriptionID(null);
+    };
+
     useEffect(() => {
 
         async function fetchSelectedPrescription() {
@@ -120,7 +125,7 @@ export default function CheckPrescriptionPage() {
 
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                setSelectedPrescription(null);
+                closePrescriptionModal();
             }
         };
 
@@ -281,7 +286,7 @@ export default function CheckPrescriptionPage() {
             {selectedPrescription && (
                 <div
                     className="prescription-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4"
-                    onClick={() => setSelectedPrescription(null)}
+                    onClick={() => closePrescriptionModal()}
                 >
                     <div
                         className="prescription-print-root max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
@@ -300,7 +305,7 @@ export default function CheckPrescriptionPage() {
                                     Download PDF
                                 </button>
                                 <button
-                                    onClick={() => setSelectedPrescription(null)}
+                                    onClick={() => closePrescriptionModal()}
                                     className="no-print rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                                     aria-label="Close prescription preview"
                                 >
@@ -415,64 +420,6 @@ export default function CheckPrescriptionPage() {
                     </div>
                 </div>
             )}
-
-            <style jsx global>{`
-                @media print {
-                    @page {
-                        size: A4 portrait;
-                        margin: 4mm 8mm 8mm 8mm;
-                    }
-
-                    html,
-                    body {
-                        width: 210mm;
-                        min-height: 297mm;
-                        margin: 0;
-                        padding: 20;
-                        background: #ffffff !important;
-                    }
-
-                    main {
-                        padding: 10px !important;
-                        margin: 0 !important;
-                        min-height: 0 !important;
-                        background: #ffffff !important;
-                    }
-
-                    main > :not(.prescription-modal-overlay) {
-                        display: none !important;
-                    }
-
-                    .prescription-modal-overlay {
-                        position: static !important;
-                        inset: auto !important;
-                        display: flex !important;
-                        justify-content: center !important;
-                        align-items: flex-start !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        background: #ffffff !important;
-                    }
-
-                    .prescription-print-root {
-                        position: static !important;
-                        width: 190mm !important;
-                        max-width: 190mm !important;
-                        margin-top: 0 !important;
-                        max-height: none !important;
-                        overflow: visible !important;
-                        border: 1px solid #d1d5db !important;
-                        border-radius: 0 !important;
-                        box-shadow: none !important;
-                        background: #ffffff !important;
-                    }
-
-                    .no-print,
-                    .prescription-modal-header {
-                        display: none !important;
-                    }
-                }
-            `}</style>
         </main>
     );
 }

@@ -2,6 +2,7 @@ import {
     Pill,
     CalendarPlus,
     Microscope,
+    Search,
     Bell,
     User,
     ChevronRight,
@@ -133,10 +134,17 @@ const MedicalDashboard = async () => {
                             />
                             <ActionCard
                                 title="Lab Test Results"
-                                description="Review diagnostic reports linked to consultations."
+                                description="Track pending prescribed tests and upload reports as PDF or photos."
                                 icon={<Microscope size={24} />}
                                 colorClass="bg-purple-100 text-purple-600"
-                                href='#'
+                                href='/dashboard/check-reports'
+                            />
+                            <ActionCard
+                                title="Search Tests"
+                                description="Find diagnostic centers by test availability, location, and price range."
+                                icon={<Search size={24} />}
+                                colorClass="bg-cyan-100 text-cyan-700"
+                                href='/dashboard/search-tests'
                             />
                         </>
                     ) : (
@@ -164,10 +172,17 @@ const MedicalDashboard = async () => {
                             />
                             <ActionCard
                                 title="Lab Test Results"
-                                description="Securely view your latest blood work, imaging reports, and pathology."
+                                description="Track pending prescribed tests and upload reports as PDF or photos."
                                 icon={<Microscope size={24} />}
                                 colorClass="bg-purple-100 text-purple-600"
-                                href='#'
+                                href='/dashboard/check-reports'
+                            />
+                            <ActionCard
+                                title="Search Tests"
+                                description="Find diagnostic centers by test availability, location, and price range."
+                                icon={<Search size={24} />}
+                                colorClass="bg-cyan-100 text-cyan-700"
+                                href='/dashboard/search-tests'
                             />
                         </>
                     )}
