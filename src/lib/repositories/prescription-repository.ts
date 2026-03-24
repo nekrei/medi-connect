@@ -46,12 +46,13 @@ export type PrescriptionSearchRow = {
     followupText: string;
 }
 export async function getSearchedPrescriptions(params: {
+    patientId: string;
     prescriptionId: number | null;
     doctorname: string | null;
     fromDate: Date | null;
     toDate: Date | null;
 }): Promise<Array<PrescriptionSearchRow>> {
-    const { prescriptionId, doctorname, fromDate, toDate } = params;
+    const { patientId, prescriptionId, doctorname, fromDate, toDate } = params;
 
     const rows = (await sql`
         SELECT
@@ -66,7 +67,8 @@ export async function getSearchedPrescriptions(params: {
             PRESCRIPTION P
             JOIN USERS D ON P.DOCTORID = D.USERID
         WHERE
-            (COALESCE(${prescriptionId}::text, '') = '' OR P.PRESCRIPTIONID = ${prescriptionId}::int)
+            P.PATIENTID = ${patientId}
+             AND (COALESCE(${prescriptionId}::text, '') = '' OR P.PRESCRIPTIONID = ${prescriptionId}::int)
              AND (${fromDate}::timestamp IS NULL OR P.APPOINTMENTDATE >= ${fromDate}::timestamp)
              AND (${toDate}::timestamp IS NULL OR P.APPOINTMENTDATE <= ${toDate}::timestamp)
              AND (COALESCE(${doctorname}::text, '') = '' OR (D.FIRSTNAME || ' ' || D.LASTNAME) ILIKE '%' || ${doctorname}::text || '%')

@@ -389,12 +389,12 @@ export default function CheckPrescriptionPage() {
                                                     <td className="px-3 py-2">{test.category}</td>
                                                     <td className="px-3 py-2">{test.reason}</td>
                                                     <td className="no-print px-3 py-2">
-                                                        <button
-                                                            type="button"
+                                                        <Link
+                                                            href={`/dashboard/search-tests?testName=${encodeURIComponent(test.testName)}`}
                                                             className="inline-flex items-center rounded-md bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                                                         >
                                                             Book Test
-                                                        </button>
+                                                        </Link>
                                                     </td>
                                                 </tr>
                                             ))}
