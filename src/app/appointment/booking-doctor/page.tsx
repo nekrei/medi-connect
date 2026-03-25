@@ -15,6 +15,7 @@ import {
     ShieldCheck,
     Stethoscope,
     UserRound,
+    Star
 } from "lucide-react";
 
 import { fetchDoctorSchedules, createPatientAppointment, fetchScheduleAvailability } from "./actions";
@@ -107,6 +108,7 @@ function BookingDoctorContent() {
     const hospitalName = searchParams.get("hospital") ?? "BRAC Healthcare Medical Center";
     const district = searchParams.get("district") ?? "Dhaka";
     const thana = searchParams.get("thana") ?? "Dhanmondi";
+    const avgrating = searchParams.get("avgrating") ? parseFloat(searchParams.get("avgrating")!) : 0;
     const availableDaySet = useMemo(
         () => parseAvailableDays(searchParams.get("availabledays")),
         [searchParams]
@@ -210,7 +212,7 @@ function BookingDoctorContent() {
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">
                                     {specialization.split(",")[0] || "Specialist care"}
                                 </p>
-                                <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">{doctorName}</h2>
+                                <div className="flex items-center gap-3 mt-2">                                    <h2 className="text-3xl font-black leading-tight sm:text-4xl">{doctorName}</h2>                                    <div className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full text-white text-sm font-medium backdrop-blur-sm self-start mt-1">                                        <Star className="h-4 w-4 fill-current text-yellow-400" />                                        <span>{avgrating > 0 ? avgrating.toFixed(1) : "New"}</span>                                    </div>                                </div>
                                 <p className="mt-2 max-w-3xl text-sm leading-6 text-blue-50 sm:text-base">
                                     Book a structured in-person consultation with a verified MediConnect specialist. Select your preferred appointment type, choose a convenient date, and confirm an available chamber slot.
                                 </p>

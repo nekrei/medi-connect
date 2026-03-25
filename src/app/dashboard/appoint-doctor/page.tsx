@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, MapPin, Stethoscope, CalendarDays, LocateFixed } from "lucide-react";
+import { Search, MapPin, Stethoscope, CalendarDays, LocateFixed, Star } from "lucide-react";
 import { DoctorSearchRow } from "@/lib/repositories/doctor-appointment-repository";
 import LocationMap, { MapCoords, LocDetails } from "@/components/LeafletMap";
 
@@ -345,21 +345,23 @@ export default function AppointDoctorPage() {
 
     // Convert filtered doctors to map details
     const doctorMapDetails = useMemo(() => {
-        const detailsMap: Record<string, LocDetails> = {};
+        const detailsArray: LocDetails[] = [];
 
         filteredDoctors.forEach((doctor) => {
             const coords = THANA_COORDS[doctor.thana];
-            if (coords && !detailsMap[doctor.thana]) {
-                detailsMap[doctor.thana] = {
-                    name: doctor.thana,
-                    lat: coords.lat,
-                    lng: coords.lng,
-                    address: `${doctor.thana}, ${doctor.district}`,
-                };
+            if (coords) {
+                const latOffset = (Math.random() - 0.5) * 0.005;
+                const lngOffset = (Math.random() - 0.5) * 0.005;
+                detailsArray.push({
+                    name: doctor.name,
+                    lat: coords.lat + latOffset,
+                    lng: coords.lng + lngOffset,
+                    address: doctor.hospital,
+                });
             }
         });
 
-        return Object.values(detailsMap);
+        return detailsArray;
     }, [filteredDoctors]);
 
     return (
@@ -526,7 +528,13 @@ export default function AppointDoctorPage() {
                                     </div>
 
                                     <div>
-                                        <h2 className="text-xl font-bold text-slate-900">{doctor.name}</h2>
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-xl font-bold text-slate-900">{doctor.name}</h2>
+                                            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-600 border border-amber-200">
+                                                <Star className="fill-amber-500 text-amber-500" size={14} />
+                                                <span>{doctor.avgrating > 0 ? doctor.avgrating.toFixed(1) : "New"}</span>
+                                            </div>
+                                        </div>
                                         <p className="mt-1 text-sm text-slate-500">{doctor.hospital}</p>
 
                                         <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
@@ -579,6 +587,7 @@ export default function AppointDoctorPage() {
                                                         : doctor.specialization,
                                                     district: doctor.district,
                                                     thana: doctor.thana,
+                                                    avgrating: doctor.avgrating,
                                                     availabledays: (doctor.availabledays ?? []).join(","),
                                                 },
                                             }}

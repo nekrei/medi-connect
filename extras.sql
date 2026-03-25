@@ -95,9 +95,23 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-select appointmentid 
-    from appointments ap join chamberschedules cs on ap.scheduleid = cs.scheduleid
-    join chambers c on cs.chamberid = c.chamberid
-    join doctors d on c.doctorid = d.doctorid
-    where d.doctorid = 15 and patientid = 10 and 
-    appointmentdate = date'2026-03-25' and status <> 'Completed';
+ SELECT 
+            d.doctorid,
+            (u.firstname || ' ' || u.lastname) as name,
+            array_to_string(get_doctor_specializations(d.doctorid), ', ') as specialization,
+            h.hospitalname as hospital,
+            dist.districtname as district,
+            t.thananame as thana,
+            COALESCE(AVG(r.rating)::float, 0) as avgrating,
+            get_chamber_available_days(c.chamberid) as availabledays
+        FROM chambers c 
+        JOIN doctors d on c.doctorid = d.doctorid
+        JOIN users u on d.doctorid = u.userid
+        JOIN hospitals h on c.hospitalid = h.hospitalid
+        JOIN locations l on h.locationid = l.locationid
+        JOIN thanas t on l.thanaid = t.thanaid
+        JOIN districts dist on t.districtid = dist.districtid
+        LEFT JOIN reviews r on d.doctorid = r.doctorid
+        
+        GROUP BY
+            d.doctorid, u.firstname, u.lastname, h.hospitalname, dist.districtname, t.thananame, c.chamberid

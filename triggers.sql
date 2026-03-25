@@ -211,4 +211,5 @@ create or replace trigger completing_appointment_trigger
 after insert on prescription
 for each row 
 execute function completing_appointment();
-    
+
+

@@ -10,6 +10,7 @@ export type DoctorSearchRow = {
     hospital: string;
     district: string;
     thana: string;
+    avgrating: number;
     availabledays: number[] | null;
 };
 
@@ -22,29 +23,34 @@ export async function searchDoctors(params: {
 }): Promise<Array<DoctorSearchRow>> {
     const { name, district, thana, specialization, availableDay } = params;
     
-    const rows = (await sql`
-        SELECT
-            DR.DOCTORID AS doctorid,
-            U.FIRSTNAME || ' ' || U.LASTNAME AS name,
-            get_doctor_specializations(DR.DOCTORID) AS specialization,
-            H.HOSPITALNAME AS hospital,
-            D.DISTRICTNAME AS district,
-            T.THANANAME AS thana,
-            get_chamber_available_days(C.CHAMBERID) AS availableDays
-        FROM CHAMBERS AS C
-        JOIN DOCTORS AS DR ON DR.DOCTORID = C.DOCTORID
-        JOIN USERS AS U ON DR.DOCTORID = U.USERID
-        JOIN HOSPITALS AS H ON C.HOSPITALID = H.HOSPITALID
-        JOIN LOCATIONS AS L ON H.LOCATIONID = L.LOCATIONID
-        JOIN THANAS AS T ON L.THANAID = T.THANAID
-        JOIN DISTRICTS AS D ON T.DISTRICTID = D.DISTRICTID
-        WHERE
-            (COALESCE(${name}::text, '') = '' OR (U.FIRSTNAME || ' ' || U.LASTNAME) ILIKE '%' || ${name}::text || '%')
-            AND (COALESCE(${district}::text, '') = '' OR D.DISTRICTNAME = ${district}::text)
-            AND (COALESCE(${thana}::text, '') = '' OR T.THANANAME = ${thana}::text)
-            AND (COALESCE(${specialization}::text, '') = '' OR ${specialization}::text = ANY(get_doctor_specializations(DR.DOCTORID)))
-            AND (COALESCE(${availableDay}::text, '') = '' OR ${availableDay} = ANY(get_chamber_available_days(C.CHAMBERID)))
-    `) as Array<DoctorSearchRow>;
+    const rows = await sql`
+        SELECT 
+            d.doctorid,
+            (u.firstname || ' ' || u.lastname) as name,
+            array_to_string(get_doctor_specializations(d.doctorid), ', ') as specialization,
+            h.hospitalname as hospital,
+            dist.districtname as district,
+            t.thananame as thana,
+            COALESCE(AVG(r.rating)::float, 0) as avgrating,
+            get_chamber_available_days(c.chamberid) as availabledays
+        FROM chambers c 
+        JOIN doctors d on c.doctorid = d.doctorid
+        JOIN users u on d.doctorid = u.userid
+        JOIN hospitals h on c.hospitalid = h.hospitalid
+        JOIN locations l on h.locationid = l.locationid
+        JOIN thanas t on l.thanaid = t.thanaid
+        JOIN districts dist on t.districtid = dist.districtid
+        LEFT JOIN reviews r on d.doctorid = r.doctorid
+        WHERE 
+            (COALESCE(${name}::text, '') = '' OR (u.firstname || ' ' || u.lastname) ILIKE '%' || ${name}::text || '%')
+            AND (COALESCE(${district}::text, '') = '' OR dist.districtname = ${district}::text)
+            AND (COALESCE(${thana}::text, '') = '' OR t.thananame = ${thana}::text)
+            AND (COALESCE(${specialization}::text, '') = '' OR ${specialization}::text = ANY(get_doctor_specializations(d.doctorid)))
+            AND (COALESCE(${availableDay}::text, '') = '' OR ${availableDay}::int = ANY(get_chamber_available_days(c.chamberid)))
+        GROUP BY
+            d.doctorid, u.firstname, u.lastname, h.hospitalname, dist.districtname, t.thananame, c.chamberid
+        `;
 
-    return rows;
+    return rows as Array<DoctorSearchRow>;
 }
+
