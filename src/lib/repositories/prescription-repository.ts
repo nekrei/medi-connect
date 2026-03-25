@@ -49,8 +49,8 @@ export async function getSearchedPrescriptions(params: {
     patientId: string;
     prescriptionId: number | null;
     doctorname: string | null;
-    fromDate: Date | null;
-    toDate: Date | null;
+    fromDate: string | null;
+    toDate: string | null;
 }): Promise<Array<PrescriptionSearchRow>> {
     const { patientId, prescriptionId, doctorname, fromDate, toDate } = params;
 

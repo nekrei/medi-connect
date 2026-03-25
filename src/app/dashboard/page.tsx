@@ -13,6 +13,7 @@ import { getCurrentUser } from '@/lib/auth/current-user';
 import { redirect } from 'next/navigation';
 
 import { getAppointmentByPatient } from '@/lib/repositories/appointment-repository';
+import { getSearchedPrescriptions } from '@/lib/repositories/prescription-repository';
 import { format } from 'date-fns';
 
 // --- Types ---
@@ -54,6 +55,15 @@ const MedicalDashboard = async () => {
     const isDoctor = user.role === 'Doctor';
     const patientAppointments = await getAppointmentByPatient(parseInt(user.id, 10));
     
+    // FETCH PRESCRIPTIONS
+    const pastPrescriptions = await getSearchedPrescriptions({
+        patientId: user.id,
+        prescriptionId: null,
+        doctorname: null,
+        fromDate: null,
+        toDate: null
+    });
+    
     const upcomingAppointments = patientAppointments.filter(a => a.status === 'Pending' || a.status === 'Scheduled');
     const pastAppointments = patientAppointments.filter(a => a.status !== 'Pending' && a.status !== 'Scheduled');
     
@@ -63,11 +73,26 @@ const MedicalDashboard = async () => {
         return timeA - timeB;
     })[0] : null;
 
-    const recentHistory = pastAppointments.sort((a,b) => {
-        const timeA = a.timeslot ? new Date(a.timeslot).getTime() : (a.requestedat ? new Date(a.requestedat).getTime() : 0);
-        const timeB = b.timeslot ? new Date(b.timeslot).getTime() : (b.requestedat ? new Date(b.requestedat).getTime() : 0);
-        return timeB - timeA;
-    }).slice(0, 3);
+    const historyItems = [
+        ...pastAppointments.map(a => ({
+            type: 'Appointment',
+            date: a.timeslot ? new Date(a.timeslot) : (a.requestedat ? new Date(a.requestedat) : new Date(0)),
+            doctorName: a.doctorname,
+            detail: a.status,
+            colorClass: a.status === 'Completed' ? 'text-emerald-500' : 'text-slate-400',
+            href: '/dashboard/appointments'
+        })),
+        ...pastPrescriptions.map(p => ({
+            type: 'Prescription',
+            date: new Date(p.appointmentDate),
+            doctorName: p.doctorName,
+            detail: `${p.medicincount} meds, ${p.testcount} tests`,
+            colorClass: 'text-blue-500',
+            href: '/dashboard/check-prescription'
+        }))
+    ];
+
+    const recentHistory = historyItems.sort((a,b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
 
     return (
         <div className="min-h-screen bg-slate-50 flex">
@@ -194,15 +219,22 @@ const MedicalDashboard = async () => {
                         <h2 className="text-xl font-bold text-slate-800">Recent Medical History</h2>
                         <div className="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-50 overflow-hidden">
                             {recentHistory.length > 0 ? recentHistory.map((item, idx) => (
-                                <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                                    <div>
-                                        <p className="font-semibold text-slate-800">Appointment with Dr. {item.doctorname}</p>
+                                <Link 
+                                    href={item.href}
+                                    key={idx} 
+                                    className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer block"
+                                >
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-slate-800">{item.type} w/ Dr. {item.doctorName}</p>
                                         <p className="text-xs text-slate-400">
-                                            {item.timeslot ? format(new Date(item.timeslot), 'MMM dd, yyyy') : (item.requestedat ? format(new Date(item.requestedat), 'MMM dd, yyyy') : 'Unknown Date')}
+                                            {format(new Date(item.date), 'MMM dd, yyyy')}
                                         </p>
                                     </div>
-                                    <span className={`text-xs font-bold uppercase tracking-wider ${item.status === 'Completed' ? 'text-emerald-500' : 'text-slate-400'}`}>{item.status}</span>
-                                </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs font-bold uppercase tracking-wider ${item.colorClass}`}>{item.detail}</span>
+                                        <ChevronRight size={16} className="text-slate-300" />
+                                    </div>
+                                </Link>
                             )) : (
                                 <div className="p-6 text-center text-slate-500 text-sm">
                                     No recent medical history found.

@@ -188,3 +188,27 @@ before insert or update of status on appointments
 for each ROW
 execute function status_update_checker();
 
+
+create or replace function completing_appointment() returns trigger as $$
+declare 
+    appid int;
+begin
+    select appointmentid into appid
+    from appointments ap join chamberschedules cs on ap.scheduleid = cs.scheduleid
+    join chambers c on cs.chamberid = c.chamberid
+    join doctors d on c.doctorid = d.doctorid
+    where d.doctorid = new.doctorid and patientid = new.patientid and 
+    appointmentdate = new.appointmentdate and status <> 'Completed'
+    for update;
+    if appid is not null then
+        update appointments set status = 'Completed' where appointmentid = appid;
+    end if;
+    return new;
+end;
+$$ language plpgsql;
+
+create or replace trigger completing_appointment_trigger
+after insert on prescription
+for each row 
+execute function completing_appointment();
+    

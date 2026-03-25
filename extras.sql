@@ -94,3 +94,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+select appointmentid 
+    from appointments ap join chamberschedules cs on ap.scheduleid = cs.scheduleid
+    join chambers c on cs.chamberid = c.chamberid
+    join doctors d on c.doctorid = d.doctorid
+    where d.doctorid = 15 and patientid = 10 and 
+    appointmentdate = date'2026-03-25' and status <> 'Completed';

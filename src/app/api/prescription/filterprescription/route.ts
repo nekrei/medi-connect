@@ -18,8 +18,8 @@ export async function GET(req: Request) {
         patientId: user.id,
         prescriptionId: prescriptionId ? parseInt(prescriptionId) : null,
         doctorname: doctorname || null,
-        fromDate: fromDateStr ? new Date(fromDateStr) : null,
-        toDate: toDateStr ? new Date(toDateStr) : null
+        fromDate: fromDateStr || null,
+        toDate: toDateStr || null
     });
 
     return NextResponse.json(doctors);

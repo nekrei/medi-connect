@@ -291,12 +291,12 @@ create table appointments(
    status varchar(25) check (status in ('Scheduled', 'Completed', 'Cancelled', 'Denied', 'Pending', 'Absent')) 
    not null default 'Pending',
    requestedat timestamp default now(),
+   history_access varchar(25) check (history_access in ('Requested', 'Granted', 'Deneied', 'Not Requested')) default 'Not Requested',
    FOREIGN key (patientid) references users(userid) on delete cascade,
    foreign key (scheduleid) references chamberschedules(scheduleid)
 );
 alter table appointments
 add constraint unique_appointment UNIQUE (patientid, scheduleid, appointmentdate);
-
 
 
 -- ── Migration: run these if the Doctors table already exists in your DB ───────

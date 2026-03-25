@@ -15,6 +15,7 @@ type AppointmentDbRow = {
     sex: string | null;
     status: AppointmentStatus;
     requestedat: string | null;
+    history_access: string | null;
 };
 
 type ScheduleDbRow = {
@@ -42,6 +43,7 @@ export type Appointment = {
     sex: string | null;
     status: AppointmentStatus;
     requestedat: string | null;
+    history_access: string | null;
 };
 
 export type Schedule = {
@@ -68,6 +70,7 @@ export type DoctorAppointmentRow = {
     esttime: string | null;
     status: AppointmentStatus;
     requestedat: string | null;
+    history_access: string | null;
 };
 
 export type DoctorHospitalFilterRow = {
@@ -120,6 +123,7 @@ export async function listDoctorAppointments(params: {
                 esttime: appointment.timeslot,
                 status: appointment.status,
                 requestedat: appointment.requestedat,
+                history_access: appointment.history_access,
             }));
         })
     );
@@ -321,7 +325,8 @@ export async function getAppointmentsBySchedule(scheduleId: number): Promise<App
                 i.appointmentid,i.scheduleid,i.patientid,
                 (u.firstname || ' ' || u.lastname) as patientname,u.email as patientemail,
                 to_char(i.esttime, 'YYYY-MM-DD"T"HH24:MI:SS') as timeslot,
-                u.sex,i.status,to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
+                u.sex,i.status,to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat,
+                i.history_access
             from appointments i
             join users u on i.patientid = u.userid
             where i.scheduleid = $1
@@ -342,7 +347,8 @@ export async function getAppointmentsByDateSchedule(scheduleId: number, date: st
             `select
                 i.appointmentid,i.scheduleid,i.patientid,(u.firstname || ' ' || u.lastname) as patientname,
                 u.email as patientemail,to_char(i.esttime, 'YYYY-MM-DD"T"HH24:MI:SS') as timeslot,
-                u.sex,i.status,to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
+                u.sex,i.status,to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat,
+                i.history_access
             from appointments i
             join users u on i.patientid = u.userid
             where i.scheduleid = $1 and date_trunc('day', i.esttime) = date_trunc('day', $2::date)
@@ -374,6 +380,7 @@ export async function listDoctorAppointmentSchedules(doctorId: number): Promise<
 
 export type PatientAppointmentRow = {
     appointmentid: number,
+    doctorid: number,
     doctorname: string,
     doctordesignation: string,
     doctormail: string | null,
@@ -382,7 +389,8 @@ export type PatientAppointmentRow = {
     chamberduration: string,
     timeslot: string | null,
     status: AppointmentStatus,
-    requestedat: string | null
+    requestedat: string | null,
+    history_access: string | null
 }
 export async function getAppointmentByPatient(patientId : number):
     Promise<PatientAppointmentRow[]> {
@@ -390,11 +398,11 @@ export async function getAppointmentByPatient(patientId : number):
         try {
             const res = await client.query<PatientAppointmentRow>(
             `select 
-                appointmentid, (u.firstname || ' ' || u.lastname) as doctorname, d.designation as doctordesignation, 
+                appointmentid, d.doctorid, (u.firstname || ' ' || u.lastname) as doctorname, d.designation as doctordesignation, 
                 u.email as doctormail, h.hospitalname, addressString(l.locationid) as chamberloc,
                 (to_char(cs.starttime, 'HH12:MI AM') || ' - ' || to_char(cs.endtime, 'HH12:MI AM')) as chamberduration,
                 to_char(i.esttime, 'YYYY-MM-DD"T"HH24:MI:SS') as timeslot, i.status,
-                to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat
+                to_char(i.requestedat, 'YYYY-MM-DD"T"HH24:MI:SS') as requestedat, i.history_access
             from appointments i join chamberschedules cs on i.scheduleid = cs.scheduleid
             join chambers c on cs.chamberid = c.chamberid
             join doctors d on c.doctorid = d.doctorid
@@ -509,6 +517,42 @@ export async function getwaitingcount(scheduleId: number, appointDate: string): 
             [scheduleId, appointDate]
         );
         return res.rows[0]?.cnt ?? 0;
+    } finally {
+        client.release();
+    }
+}
+
+export async function requestAccess(appointmentId: number): Promise<string> {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const res = await client.query(
+            `update appointments set history_access = 'Requested' where appointmentid = $1`,
+            [appointmentId]
+        );
+        await client.query('COMMIT');
+        return 'Access requested successfully';
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+export async function grantAccess(appointmentId: number): Promise<string> {
+    const client = await pool.connect();
+    try{
+        await client.query('BEGIN');
+        const res = await client.query(
+            `update appointments set history_access = 'Granted' where appointmentid = $1`,
+            [appointmentId]
+        );
+        await client.query('COMMIT');
+        return 'Access granted successfully';
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
     } finally {
         client.release();
     }

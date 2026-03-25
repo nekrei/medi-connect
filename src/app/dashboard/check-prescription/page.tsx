@@ -49,14 +49,14 @@ export default function CheckPrescriptionPage() {
 
             const doctorQuery = doctorFilter.trim().toLowerCase();
             const idQuery = prescriptionIdFilter.trim();
-            const fromDate = fromDateFilter ? new Date(`${fromDateFilter}T00:00:00`).getTime() : null;
-            const toDate = toDateFilter ? new Date(`${toDateFilter}T23:59:59`).getTime() : null;
+            const fromDateLocal = fromDateFilter ? `${fromDateFilter}T00:00:00` : null;
+            const toDateLocal = toDateFilter ? `${toDateFilter}T23:59:59` : null;
 
             const params = new URLSearchParams();
             if (doctorQuery) params.set("doctorname", doctorQuery);
             if (idQuery) params.set("prescriptionId", idQuery);
-            if (fromDate) params.set("fromDate", new Date(fromDate).toISOString());
-            if (toDate) params.set("toDate", new Date(toDate).toISOString());
+            if (fromDateLocal) params.set("fromDate", fromDateLocal);
+            if (toDateLocal) params.set("toDate", toDateLocal);
 
             try {
                 const response = await fetch(`/api/prescription/filterprescription?${params.toString()}`, { cache: 'no-store' });

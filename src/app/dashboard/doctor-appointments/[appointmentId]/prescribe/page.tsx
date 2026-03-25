@@ -49,7 +49,7 @@ export default async function PrescribePage(props: { params: Promise<{ appointme
                     appointmentId={parseInt(appointmentId)}
                     patientId={appointment.patientid}
                     doctorId={appointment.doctorid}
-                    appointmentDate={new Date(appointment.appointmentdate).toISOString()}
+                    appointmentDate={new Date(new Date(appointment.appointmentdate).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, -1)}
                 />
             </div>
         </div>

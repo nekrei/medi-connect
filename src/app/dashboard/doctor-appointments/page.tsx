@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Clock3, Hospital, RefreshCw, CheckCircle2, XCircle, Pill } from 'lucide-react';
-import { setAppointmentStatusAction } from './actions';
+import { CalendarDays, Clock3, Hospital, RefreshCw, CheckCircle2, XCircle, Pill, FileText } from 'lucide-react';
+import { setAppointmentStatusAction, requestMedicalHistoryAccessAction } from './actions';
 
 type AppointmentRow = {
     appointmentid: number;
@@ -18,6 +18,7 @@ type AppointmentRow = {
     esttime: string | null;
     status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Denied' | 'Pending' | 'Absent';
     requestedat: string | null;
+    history_access: string | null;
 };
 
 type HospitalFilter = {
@@ -71,6 +72,17 @@ export default function DoctorAppointmentsPage() {
             ));
         } catch (error) {
             console.error("Failed to update status", error);
+        }
+    };
+
+    const handleRequestAccess = async (appointmentId: number) => {
+        try {
+            await requestMedicalHistoryAccessAction(appointmentId);
+            setAppointments(prev => prev.map(app => 
+                app.appointmentid === appointmentId ? { ...app, history_access: 'Requested' } : app
+            ));
+        } catch (error) {
+            console.error("Failed to request access", error);
         }
     };
 
@@ -286,12 +298,37 @@ export default function DoctorAppointmentsPage() {
                                             )}
 
                                             {appointment.status === 'Scheduled' && (
-                                                <Link
-                                                    href={`/dashboard/doctor-appointments/${appointment.appointmentid}/prescribe`}
-                                                    className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700 transition hover:bg-blue-100 font-medium"
-                                                >
-                                                    <Pill size={14} /> Write Prescription
-                                                </Link>
+                                                <div className="flex flex-col gap-2">
+                                                    <Link
+                                                        href={`/dashboard/doctor-appointments/${appointment.appointmentid}/prescribe`}
+                                                        className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700 transition hover:bg-blue-100 font-medium"
+                                                    >
+                                                        <Pill size={14} /> Write Prescription
+                                                    </Link>
+                                                    
+                                                    {appointment.history_access === 'Granted' ? (
+                                                        <Link
+                                                            href={`/dashboard/patient-history/${appointment.patientid}`}
+                                                            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 transition hover:bg-emerald-100 font-medium"
+                                                        >
+                                                            <FileText size={14} /> See Medical History
+                                                        </Link>
+                                                    ) : appointment.history_access === 'Requested' ? (
+                                                        <button
+                                                            disabled
+                                                            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500 font-medium cursor-not-allowed"
+                                                        >
+                                                            <RefreshCw size={14} className="animate-spin" /> Access Requested
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleRequestAccess(appointment.appointmentid)}
+                                                            className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700 transition hover:bg-indigo-100 font-medium"
+                                                        >
+                                                            <FileText size={14} /> Request History Access
+                                                        </button>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
