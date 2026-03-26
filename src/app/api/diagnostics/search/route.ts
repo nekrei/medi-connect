@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 
 import { searchDiagnosticCenterTests } from '@/lib/repositories/test-report-repository';
+import { getCurrentUser } from '@/lib/auth/current-user';
 
 export async function GET(req: Request) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+        
     const searchParams = new URL(req.url).searchParams;
 
     const query = (searchParams.get('query') ?? '').trim();

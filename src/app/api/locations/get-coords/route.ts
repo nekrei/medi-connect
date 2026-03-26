@@ -1,6 +1,11 @@
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
     if (!query) {

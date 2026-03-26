@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { LocDetails, MapProps } from '@/components/LeafletMap';
 import { sql } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth/current-user';
 
 export async function POST(request: Request) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const body = await request.json();
         const { lat, lng } = body as { lat: number; lng: number };

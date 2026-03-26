@@ -102,7 +102,8 @@ export async function getPatientPrescribedTestsWithReports(patientId: number): P
         await ensureUploadedReportTable(client);
         const centerTableName = await getDiagnosticCenterTableName(client);
 
-        const query = `
+        const result = await client.query<Omit<PrescribedTestReportRow, 'status'>>(
+            `
             SELECT
                 pt.prescibed_testid AS "prescribedTestId",
                 pt.prescriptionid AS "prescriptionId",
@@ -127,9 +128,9 @@ export async function getPatientPrescribedTestsWithReports(patientId: number): P
             LEFT JOIN ${centerTableName} dc ON dc.centerid = utr.center_id
             WHERE p.patientid = $1
             ORDER BY p.appointmentdate DESC NULLS LAST, pt.prescibed_testid DESC
-        `;
-
-        const result = await client.query<Omit<PrescribedTestReportRow, 'status'> & { status?: 'Pending' | 'Uploaded' }>(query, [patientId]);
+            `,
+            [patientId]
+        );
 
         return result.rows.map((row) => ({
             ...row,

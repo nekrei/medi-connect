@@ -67,7 +67,7 @@ export default function DoctorAppointmentsPage() {
     const handleUpdateStatus = async (appointmentId: number, status: AppointmentRow['status']) => {
         try {
             await setAppointmentStatusAction(appointmentId, status);
-            setAppointments(prev => prev.map(app => 
+            setAppointments(prev => prev.map(app =>
                 app.appointmentid === appointmentId ? { ...app, status } : app
             ));
         } catch (error) {
@@ -78,7 +78,7 @@ export default function DoctorAppointmentsPage() {
     const handleRequestAccess = async (appointmentId: number) => {
         try {
             await requestMedicalHistoryAccessAction(appointmentId);
-            setAppointments(prev => prev.map(app => 
+            setAppointments(prev => prev.map(app =>
                 app.appointmentid === appointmentId ? { ...app, history_access: 'Requested' } : app
             ));
         } catch (error) {
@@ -251,7 +251,14 @@ export default function DoctorAppointmentsPage() {
                                         <div className="space-y-3">
                                             <div>
                                                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Patient</p>
-                                                <h2 className="text-xl font-bold text-slate-900">{appointment.patientname}</h2>
+                                                <h2 className="text-xl font-bold text-slate-900">
+                                                    <Link
+                                                        href={`/dashboard/doctor-appointments/patient/${appointment.patientid}/${appointment.appointmentid}`}
+                                                        className="transition hover:text-blue-600"
+                                                    >
+                                                        {appointment.patientname}
+                                                    </Link>
+                                                </h2>
                                                 <p className="text-sm text-slate-500">{appointment.patientemail ?? 'No email provided'}</p>
                                             </div>
 
@@ -305,7 +312,7 @@ export default function DoctorAppointmentsPage() {
                                                     >
                                                         <Pill size={14} /> Write Prescription
                                                     </Link>
-                                                    
+
                                                     {appointment.history_access === 'Granted' ? (
                                                         <Link
                                                             href={`/dashboard/patient-history/${appointment.patientid}`}

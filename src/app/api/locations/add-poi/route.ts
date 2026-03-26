@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/current-user";
 
 
 export type newAddress = {
@@ -12,6 +13,10 @@ export type newAddress = {
 }
 
 export async function POST(request: Request) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const client = await pool.connect();
     try {
         const body = await request.json();

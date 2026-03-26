@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth/current-user';
 
 export async function GET(request: Request) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const district = searchParams.get('district');
     const clndis = district?.trim();

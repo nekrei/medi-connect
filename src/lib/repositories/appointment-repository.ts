@@ -73,6 +73,13 @@ export type DoctorAppointmentRow = {
     history_access: string | null;
 };
 
+export type DoctorAppointmentDetails = {
+    appointmentid: number;
+    patientid: number;
+    status: AppointmentStatus;
+    history_access: string | null;
+};
+
 export type DoctorHospitalFilterRow = {
     hospitalname: string;
 };
@@ -376,6 +383,29 @@ export async function listDoctorAppointmentSchedules(doctorId: number): Promise<
         starttime: schedule.starttime,
         endtime: schedule.endtime,
     }));
+}
+
+export async function getDoctorAppointmentDetailsById(doctorId: number, appointmentId: number): Promise<DoctorAppointmentDetails | null> {
+    const client = await pool.connect();
+    try {
+        const res = await client.query<DoctorAppointmentDetails>(
+            `select
+                i.appointmentid,
+                i.patientid,
+                i.status,
+                i.history_access
+            from appointments i
+            join chamberschedules cs on i.scheduleid = cs.scheduleid
+            join chambers c on cs.chamberid = c.chamberid
+            where i.appointmentid = $1 and c.doctorid = $2
+            limit 1`,
+            [appointmentId, doctorId]
+        );
+
+        return res.rows[0] ?? null;
+    } finally {
+        client.release();
+    }
 }
 
 export type PatientAppointmentRow = {
