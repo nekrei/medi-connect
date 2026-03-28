@@ -126,9 +126,10 @@ const MedicalDashboard = async () => {
                 </header>
 
                 {/* 3. Core Action Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    {isDoctor ? (
-                        <>
+                {isDoctor && (
+                    <div className="mb-10">
+                        <h2 className="text-xl font-bold text-slate-800 mb-4">Doctor Actions</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <ActionCard
                                 title="My Doctor Schedule"
                                 description="View your patient appointments and filter them by date, hospital, or chamber schedule."
@@ -137,80 +138,55 @@ const MedicalDashboard = async () => {
                                 href='/dashboard/doctor-appointments'
                             />
                             <ActionCard
-                                title="My Patient Appointments"
-                                description="View the past and upcoming appointments you made as a patient."
-                                icon={<CalendarPlus size={24} />}
-                                colorClass="bg-indigo-100 text-indigo-600"
-                                href='/dashboard/appointments'
+                                title="Pending Appointments"
+                                description="Review and confirm or deny new appointment requests from patients."
+                                icon={<Bell size={24} />}
+                                colorClass="bg-amber-100 text-amber-600"
+                                href='/dashboard/doctor-pending-appointments'
                             />
-                            <ActionCard
-                                title="Appoint Doctor"
-                                description="Schedule virtual or in-person visits with primary care or specialists."
-                                icon={<CalendarPlus size={24} />}
-                                colorClass="bg-blue-100 text-blue-600"
-                                href='/dashboard/appoint-doctor'
-                            />
-                            <ActionCard
-                                title="Check Prescription"
-                                description="Open prescription records and review past medication plans."
-                                icon={<Pill size={24} />}
-                                colorClass="bg-emerald-100 text-emerald-600"
-                                href='/dashboard/check-prescription'
-                            />
-                            <ActionCard
-                                title="Lab Test Results"
-                                description="Track pending prescribed tests and upload reports as PDF or photos."
-                                icon={<Microscope size={24} />}
-                                colorClass="bg-purple-100 text-purple-600"
-                                href='/dashboard/check-reports'
-                            />
-                            <ActionCard
-                                title="Search Tests"
-                                description="Find diagnostic centers by test availability, location, and price range."
-                                icon={<Search size={24} />}
-                                colorClass="bg-cyan-100 text-cyan-700"
-                                href='/dashboard/search-tests'
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <ActionCard
-                                title="My Appointments"
-                                description="View your past and upcoming appointments."
-                                icon={<CalendarPlus size={24} />}
-                                colorClass="bg-blue-100 text-blue-600"
-                                href='/dashboard/appointments'
-                            />
-                            <ActionCard
-                                title="Check Prescription"
-                                description="Track active medications, dosage instructions, and request pharmacy refills."
-                                icon={<Pill size={24} />}
-                                colorClass="bg-emerald-100 text-emerald-600"
-                                href='/dashboard/check-prescription'
-                            />
-                            <ActionCard
-                                title="Appoint Doctor"
-                                description="Schedule virtual or in-person visits with primary care or specialists."
-                                icon={<CalendarPlus size={24} />}
-                                colorClass="bg-blue-100 text-blue-600"
-                                href='/dashboard/appoint-doctor'
-                            />
-                            <ActionCard
-                                title="Lab Test Results"
-                                description="Track pending prescribed tests and upload reports as PDF or photos."
-                                icon={<Microscope size={24} />}
-                                colorClass="bg-purple-100 text-purple-600"
-                                href='/dashboard/check-reports'
-                            />
-                            <ActionCard
-                                title="Search Tests"
-                                description="Find diagnostic centers by test availability, location, and price range."
-                                icon={<Search size={24} />}
-                                colorClass="bg-cyan-100 text-cyan-700"
-                                href='/dashboard/search-tests'
-                            />
-                        </>
-                    )}
+                        </div>
+                    </div>
+                )}
+
+                <div className="mb-10">
+                    <h2 className="text-xl font-bold text-slate-800 mb-4">Patient Actions</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <ActionCard
+                            title={isDoctor ? "My Patient Appointments" : "My Appointments"}
+                            description={isDoctor ? "View the past and upcoming appointments you made as a patient." : "View your past and upcoming appointments."}
+                            icon={<CalendarPlus size={24} />}
+                            colorClass={isDoctor ? "bg-indigo-100 text-indigo-600" : "bg-blue-100 text-blue-600"}
+                            href='/dashboard/appointments'
+                        />
+                        <ActionCard
+                            title="Appoint Doctor"
+                            description="Schedule virtual or in-person visits with primary care or specialists."
+                            icon={<CalendarPlus size={24} />}
+                            colorClass="bg-blue-100 text-blue-600"
+                            href='/dashboard/appoint-doctor'
+                        />
+                        <ActionCard
+                            title="Check Prescription"
+                            description={isDoctor ? "Open prescription records and review past medication plans." : "Track active medications, dosage instructions, and request pharmacy refills."}
+                            icon={<Pill size={24} />}
+                            colorClass="bg-emerald-100 text-emerald-600"
+                            href='/dashboard/check-prescription'
+                        />
+                        <ActionCard
+                            title="Lab Test Results"
+                            description="Track pending prescribed tests and upload reports as PDF or photos."
+                            icon={<Microscope size={24} />}
+                            colorClass="bg-purple-100 text-purple-600"
+                            href='/dashboard/check-reports'
+                        />
+                        <ActionCard
+                            title="Search Tests"
+                            description="Find diagnostic centers by test availability, location, and price range."
+                            icon={<Search size={24} />}
+                            colorClass="bg-cyan-100 text-cyan-700"
+                            href='/dashboard/search-tests'
+                        />
+                    </div>
                 </div>
 
                 {/* 4. Secondary Information (Timeline/Upcoming) */}

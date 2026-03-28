@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Clock3, Hospital, RefreshCw, Pill, FileText } from 'lucide-react';
-import { requestMedicalHistoryAccessAction } from './actions';
+import { CalendarDays, Clock3, Hospital, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { setAppointmentStatusAction } from '../doctor-appointments/actions';
 
 type AppointmentRow = {
     appointmentid: number;
@@ -45,16 +45,7 @@ type ApiResponse = {
 
 const WEEKDAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-const STATUS_STYLES: Record<AppointmentRow['status'], string> = {
-    Scheduled: 'bg-blue-50 text-blue-700 border-blue-200',
-    Completed: 'bg-green-50 text-green-700 border-green-200',
-    Cancelled: 'bg-slate-100 text-slate-700 border-slate-200',
-    Denied: 'bg-red-50 text-red-700 border-red-200',
-    Pending: 'bg-amber-50 text-amber-700 border-amber-200',
-    Absent: 'bg-purple-50 text-purple-700 border-purple-200',
-};
-
-export default function DoctorAppointmentsPage() {
+export default function DoctorPendingAppointmentsPage() {
     const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
     const [hospitals, setHospitals] = useState<HospitalFilter[]>([]);
     const [schedules, setSchedules] = useState<ScheduleFilter[]>([]);
@@ -64,14 +55,13 @@ export default function DoctorAppointmentsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
 
-    const handleRequestAccess = async (appointmentId: number) => {
+    const handleUpdateStatus = async (appointmentId: number, status: AppointmentRow['status']) => {
         try {
-            await requestMedicalHistoryAccessAction(appointmentId);
-            setAppointments(prev => prev.map(app =>
-                app.appointmentid === appointmentId ? { ...app, history_access: 'Requested' } : app
-            ));
+            await setAppointmentStatusAction(appointmentId, status);
+            // Remove from the list once confirmed or denied
+            setAppointments(prev => prev.filter(app => app.appointmentid !== appointmentId));
         } catch (error) {
-            console.error("Failed to request access", error);
+            console.error("Failed to update status", error);
         }
     };
 
@@ -93,6 +83,7 @@ export default function DoctorAppointmentsPage() {
                 if (selectedScheduleId !== 'All') {
                     params.set('scheduleId', selectedScheduleId);
                 }
+                params.set('pendingOnly', 'true');
 
                 const response = await fetch(`/api/doctor/appointments?${params.toString()}`, {
                     cache: 'no-store',
@@ -102,7 +93,7 @@ export default function DoctorAppointmentsPage() {
                 if (!response.ok || payload.status !== 'success') {
                     if (!active) return;
                     setAppointments([]);
-                    setErrorMessage(payload.message ?? 'Failed to load appointments.');
+                    setErrorMessage(payload.message ?? 'Failed to load pending appointments.');
                     return;
                 }
 
@@ -141,10 +132,10 @@ export default function DoctorAppointmentsPage() {
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-600">Doctor Workspace</p>
-                            <h1 className="mt-2 text-3xl font-extrabold text-slate-900 sm:text-4xl">My Appointments</h1>
+                            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-600">Pending Actions</p>
+                            <h1 className="mt-2 text-3xl font-extrabold text-slate-900 sm:text-4xl">Pending Appointments</h1>
                             <p className="mt-3 max-w-3xl text-slate-600">
-                                Review your patient appointment list and filter quickly by date, hospital, or chamber schedule.
+                                Review and confirm or deny new appointment requests from patients.
                             </p>
                         </div>
                         <Link
@@ -216,11 +207,11 @@ export default function DoctorAppointmentsPage() {
 
                 {isLoading ? (
                     <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-                        Loading appointments...
+                        Loading pending appointments...
                     </div>
                 ) : appointments.length === 0 ? (
                     <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-                        No appointments found for the selected filters.
+                        No pending appointments found.
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -234,7 +225,7 @@ export default function DoctorAppointmentsPage() {
                             return (
                                 <article
                                     key={appointment.appointmentid}
-                                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md sm:p-6"
+                                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-amber-200 hover:shadow-md sm:p-6"
                                 >
                                     <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-start">
                                         <div className="space-y-3">
@@ -253,15 +244,15 @@ export default function DoctorAppointmentsPage() {
 
                                             <div className="grid gap-2 text-sm text-slate-700 sm:grid-cols-3">
                                                 <p className="inline-flex items-center gap-2">
-                                                    <Hospital size={16} className="text-blue-600" />
+                                                    <Hospital size={16} className="text-amber-600" />
                                                     <span>{appointment.hospitalname}</span>
                                                 </p>
                                                 <p className="inline-flex items-center gap-2">
-                                                    <CalendarDays size={16} className="text-blue-600" />
+                                                    <CalendarDays size={16} className="text-amber-600" />
                                                     <span>{displayDate}</span>
                                                 </p>
                                                 <p className="inline-flex items-center gap-2">
-                                                    <Clock3 size={16} className="text-blue-600" />
+                                                    <Clock3 size={16} className="text-amber-600" />
                                                     <span>{displayTime}</span>
                                                 </p>
                                             </div>
@@ -272,43 +263,24 @@ export default function DoctorAppointmentsPage() {
                                         </div>
 
                                         <div className="flex flex-col items-end gap-3 text-right">
-                                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[appointment.status]}`}>
-                                                {appointment.status}
+                                            <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-amber-50 text-amber-700 border-amber-200">
+                                                Pending
                                             </span>
 
-                                            {appointment.status === 'Scheduled' && (
-                                                <div className="flex flex-col gap-2">
-                                                    <Link
-                                                        href={`/dashboard/doctor-appointments/${appointment.appointmentid}/prescribe`}
-                                                        className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700 transition hover:bg-blue-100 font-medium"
-                                                    >
-                                                        <Pill size={14} /> Write Prescription
-                                                    </Link>
-
-                                                    {appointment.history_access === 'Granted' ? (
-                                                        <Link
-                                                            href={`/dashboard/patient-history/${appointment.patientid}`}
-                                                            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 transition hover:bg-emerald-100 font-medium"
-                                                        >
-                                                            <FileText size={14} /> See Medical History
-                                                        </Link>
-                                                    ) : appointment.history_access === 'Requested' ? (
-                                                        <button
-                                                            disabled
-                                                            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500 font-medium cursor-not-allowed"
-                                                        >
-                                                            <RefreshCw size={14} className="animate-spin" /> Access Requested
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => handleRequestAccess(appointment.appointmentid)}
-                                                            className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700 transition hover:bg-indigo-100 font-medium"
-                                                        >
-                                                            <FileText size={14} /> Request History Access
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <button
+                                                    onClick={() => handleUpdateStatus(appointment.appointmentid, 'Scheduled')}
+                                                    className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-xs text-green-700 transition hover:bg-green-100 font-medium"
+                                                >
+                                                    <CheckCircle2 size={14} /> Confirm
+                                                </button>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(appointment.appointmentid, 'Denied')}
+                                                    className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 transition hover:bg-red-100 font-medium"
+                                                >
+                                                    <XCircle size={14} /> Deny
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </article>

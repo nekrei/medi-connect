@@ -3,7 +3,7 @@ import 'server-only';
 import { pool } from '@/lib/db';
 import { number } from 'zod';
 
-type AppointmentStatus = 'Scheduled' | 'Completed' | 'Cancelled' | 'Denied' | 'Pending' | 'Absent';
+export type AppointmentStatus = 'Scheduled' | 'Completed' | 'Cancelled' | 'Denied' | 'Pending' | 'Absent';
 
 type AppointmentDbRow = {
     appointmentid: number;
@@ -97,8 +97,9 @@ export async function listDoctorAppointments(params: {
     date: string | null;
     hospital: string | null;
     scheduleId: number | null;
+    statuses?: AppointmentStatus[];
 }): Promise<DoctorAppointmentRow[]> {
-    const { doctorId, date, hospital, scheduleId } = params;
+    const { doctorId, date, hospital, scheduleId, statuses } = params;
     const schedules = await getScheduleByDoctor(doctorId);
 
     const filteredSchedules = schedules.filter((schedule) => {
@@ -135,8 +136,13 @@ export async function listDoctorAppointments(params: {
         })
     );
 
-    return appointmentGroups
-        .flat()
+    let allAppointments = appointmentGroups.flat();
+    
+    if (statuses && statuses.length > 0) {
+        allAppointments = allAppointments.filter(app => statuses.includes(app.status));
+    }
+
+    return allAppointments
         .sort((a, b) => {
             const left = a.esttime ? Date.parse(a.esttime) : 0;
             const right = b.esttime ? Date.parse(b.esttime) : 0;

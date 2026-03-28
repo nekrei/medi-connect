@@ -212,4 +212,47 @@ after insert on prescription
 for each row 
 execute function completing_appointment();
 
+create or replace procedure add_poi(
+    IN thana varchar,
+    IN district varchar,
+    IN holdingnumber varchar,
+    IN road varchar,
+    IN name varchar,
+    IN type varchar,
+    out res varchar,
+    out msg varchar,
+    out locid int
+) language plpgsql
+as $$
+begin
+    if 1>(select thanaid from thanas where thananame = thana) then
+        res := 'FAILED';
+        msg := 'Thana not found';
+    elsif type not in ('hospital', 'dgcenter') then
+        res := 'FAILED';
+        msg := 'Invalid type. Must be either hospital or dgcenter';
+    else
+        insert into locations (thanaid, holdingnumber, road, propertyname) values 
+            (
+                (select thanaid from thanas where thananame = thana limit 1),
+                holdingnumber, road, name
+            ) returning locationid into locid;
+        if type = 'hospital' then
+            insert into hospitals (locationid, hospitalname) values (locid, name);
+        else
+            insert into diagnostic_center (locationid, centername) values (locid, name);
+        end if;  
+        res := 'SUCCESS';
+        msg := addressString(locid);
+    end if;
+exception
+    when others then
+        res := 'FAILED';
+        msg := 'Error occurred: ' || SQLERRM;
+end;
+$$; 
+
+
+
+
 

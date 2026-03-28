@@ -64,6 +64,14 @@ export default async function DashboardLayout({
                     ) : null}
                     {isDoctor ? (
                         <Link
+                            href="/dashboard/doctor-pending-appointments"
+                            className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                        >
+                            Pending Appointments
+                        </Link>
+                    ) : null}
+                    {isDoctor ? (
+                        <Link
                             href="/dashboard/appointments"
                             className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                         >

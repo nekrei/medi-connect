@@ -26,38 +26,34 @@ export async function POST(request: Request) {
         const name = (body?.name) ? body.name : null;
 
         //use returning clause
-        const thanaid = await client.query(
-            'select thanaid from thanas where thananame = $1',
-            [thana]
+        await client.query('BEGIN');
+        const res = await client.query(
+            'CALL add_poi($1, $2, $3, $4, $5, $6, null, null, null)',
+            [thana,district, holdingnumber, road, name, type]
         );
-        if (thanaid.rows.length === 0) {
+        if (res.rows.length === 0) {
+            await client.query('ROLLBACK');
             return NextResponse.json(
                 {
-                    message: 'Thana not found'
+                    message: 'Failed to add POI'
                 },
                 {
                     status: 500
-                });
-        }
-        await client.query('BEGIN');
-        const result = await client.query(
-            'insert into locations (thanaid, holdingnumber, road, propertyname) values ($1, $2, $3, $4) returning locationid',
-            [thanaid.rows[0].thanaid, holdingnumber, road, name]
-        );
-
-        if (type === 'hospital') {
-            await client.query(
-                'insert into hospitals (locationid, hospitalname) values ($1, $2)',
-                [result.rows[0].locationid, name]
+                }
             );
+        } else if (res.rows[0].res != 'SUCCESS') {
+            await client.query('ROLLBACK');
+            return NextResponse.json(
+                {
+                    message: res.rows[0].msg || 'Failed to add POI'
+                },  
+                {
+                    status: 500
+                }
+             );
         }
-        else if (type === 'dgcenter') {
-            await client.query(
-                'insert into diagnostic_centers (locationid, centername) values ($1, $2)',
-                [result.rows[0].locationid, name]
-            );
-        }
-        let addr = `${holdingnumber ? holdingnumber + ', ' : ''}${road ? road + ', ' : ''}${thana}, ${district}`;
+        
+        let addr = res.rows[0].msg;
 
         let coordResponse = await fetch(
             `http://localhost:3000/api/locations/get-coords?q=${encodeURIComponent(addr)}`
@@ -85,7 +81,7 @@ export async function POST(request: Request) {
         const lng = data.data[0].lon;
         await client.query(
             'update locations set latitude = $1, longitude = $2 where locationid = $3',
-            [lat, lng, result.rows[0].locationid]
+            [lat, lng, res.rows[0].locid]
         );
         await client.query('COMMIT');
         return NextResponse.json(

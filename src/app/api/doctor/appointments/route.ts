@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { getCurrentUser } from '@/lib/auth/current-user';
 import {
+    AppointmentStatus,
     listDoctorAppointmentHospitals,
     listDoctorAppointments,
     listDoctorAppointmentSchedules,
@@ -12,6 +13,7 @@ const querySchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     hospital: z.string().trim().min(1).optional(),
     scheduleId: z.coerce.number().int().positive().optional(),
+    pendingOnly: z.enum(['true', 'false']).optional(),
 });
 
 export async function GET(request: Request) {
@@ -35,6 +37,7 @@ export async function GET(request: Request) {
         date: searchParams.get('date') || undefined,
         hospital: searchParams.get('hospital') || undefined,
         scheduleId: searchParams.get('scheduleId') || undefined,
+        pendingOnly: searchParams.get('pendingOnly') || undefined,
     };
 
     const parsed = querySchema.safeParse(rawQuery);
@@ -51,6 +54,9 @@ export async function GET(request: Request) {
             date: parsed.data.date ?? null,
             hospital: parsed.data.hospital ?? null,
             scheduleId: parsed.data.scheduleId ?? null,
+            statuses: (parsed.data.pendingOnly === 'true' 
+                ? ['Pending'] 
+                : ['Scheduled', 'Completed', 'Cancelled', 'Denied', 'Absent']) as AppointmentStatus[],
         }),
         listDoctorAppointmentHospitals(doctorId),
         listDoctorAppointmentSchedules(doctorId),
