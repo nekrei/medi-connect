@@ -18,7 +18,6 @@ type AppointmentRow = {
     esttime: string | null;
     status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Denied' | 'Pending' | 'Absent';
     requestedat: string | null;
-    history_access: string | null;
 };
 
 type HospitalFilter = {
@@ -232,12 +231,7 @@ export default function DoctorPendingAppointmentsPage() {
                                             <div>
                                                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Patient</p>
                                                 <h2 className="text-xl font-bold text-slate-900">
-                                                    <Link
-                                                        href={`/dashboard/doctor-appointments/patient/${appointment.patientid}/${appointment.appointmentid}`}
-                                                        className="transition hover:text-blue-600"
-                                                    >
-                                                        {appointment.patientname}
-                                                    </Link>
+                                                    <span>{appointment.patientname}</span>
                                                 </h2>
                                                 <p className="text-sm text-slate-500">{appointment.patientemail ?? 'No email provided'}</p>
                                             </div>

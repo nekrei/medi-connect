@@ -558,38 +558,23 @@ export async function getwaitingcount(scheduleId: number, appointDate: string): 
     }
 }
 
-export async function requestAccess(appointmentId: number): Promise<string> {
+export async function doctorHasScheduledAppointmentWithPatient(doctorId: number, patientId: number): Promise<boolean> {
     const client = await pool.connect();
     try {
-        await client.query('BEGIN');
-        const res = await client.query(
-            `update appointments set history_access = 'Requested' where appointmentid = $1`,
-            [appointmentId]
+        const res = await client.query<{ has_match: boolean }>(
+            `select exists (
+                select 1
+                from appointments i
+                join chamberschedules cs on i.scheduleid = cs.scheduleid
+                join chambers c on cs.chamberid = c.chamberid
+                where c.doctorid = $1 and i.patientid = $2 and i.status = 'Scheduled'
+            ) as has_match`,
+            [doctorId, patientId]
         );
-        await client.query('COMMIT');
-        return 'Access requested successfully';
-    } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
+
+        return res.rows[0]?.has_match ?? false;
     } finally {
         client.release();
     }
 }
 
-export async function grantAccess(appointmentId: number): Promise<string> {
-    const client = await pool.connect();
-    try{
-        await client.query('BEGIN');
-        const res = await client.query(
-            `update appointments set history_access = 'Granted' where appointmentid = $1`,
-            [appointmentId]
-        );
-        await client.query('COMMIT');
-        return 'Access granted successfully';
-    } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
-    } finally {
-        client.release();
-    }
-}

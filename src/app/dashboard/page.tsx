@@ -128,7 +128,7 @@ const MedicalDashboard = async () => {
                 {/* 3. Core Action Grid */}
                 {isDoctor && (
                     <div className="mb-10">
-                        <h2 className="text-xl font-bold text-slate-800 mb-4">Doctor Actions</h2>
+                        <h2 className="text-xl font-bold text-slate-800 mb-4">Doctor Workspace</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <ActionCard
                                 title="My Doctor Schedule"
@@ -152,7 +152,7 @@ const MedicalDashboard = async () => {
                     <h2 className="text-xl font-bold text-slate-800 mb-4">Patient Actions</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <ActionCard
-                            title={isDoctor ? "My Patient Appointments" : "My Appointments"}
+                            title= "My Appointments"
                             description={isDoctor ? "View the past and upcoming appointments you made as a patient." : "View your past and upcoming appointments."}
                             icon={<CalendarPlus size={24} />}
                             colorClass={isDoctor ? "bg-indigo-100 text-indigo-600" : "bg-blue-100 text-blue-600"}

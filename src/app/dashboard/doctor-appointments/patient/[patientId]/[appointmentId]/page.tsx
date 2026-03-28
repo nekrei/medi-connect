@@ -41,7 +41,12 @@ export default async function DoctorPatientProfilePage({
         fetchContactUserInfo(parsedPatientId),
     ]);
 
-    if (!appointmentDetails || appointmentDetails.patientid !== parsedPatientId || !patientBasicInfo) {
+    if (
+        !appointmentDetails ||
+        appointmentDetails.patientid !== parsedPatientId ||
+        appointmentDetails.status !== 'Scheduled' ||
+        !patientBasicInfo
+    ) {
         redirect('/dashboard/doctor-appointments');
     }
 

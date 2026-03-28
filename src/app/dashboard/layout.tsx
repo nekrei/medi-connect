@@ -10,10 +10,9 @@ export const metadata: Metadata = {
 };
 
 const navItems = [
-    { label: "Dashboard", href: "/dashboard", active: true },
-    { label: "Medical Records", href: "#", active: false },
-    { label: "Messages", href: "#", active: false },
-    { label: "Settings", href: "#", active: false },
+    { label: "Dashboard", href: "/dashboard", active: false },
+    { label: "Prescriptions", href: "/dashboard/check-prescription", active: false },
+    { label: "Test reports", href: "/dashboard/check-reports", active: false },
 ];
 
 export default async function DashboardLayout({
@@ -30,7 +29,9 @@ export default async function DashboardLayout({
             <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white p-6 lg:flex">
                 <div className="mb-10 flex items-center gap-2 text-blue-600">
                     <Activity size={28} strokeWidth={3} />
-                    <span className="text-2xl font-black tracking-tight">MediConnect</span>
+                    <Link className="text-2xl font-black tracking-tight" href="/dashboard">
+                        MediConnect
+                    </Link>
                 </div>
 
                 <nav className="flex-1 space-y-2">

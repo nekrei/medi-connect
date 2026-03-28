@@ -41,7 +41,11 @@ export default async function PatientTestReportsPage({
     }
 
     const appointmentDetails = await getDoctorAppointmentDetailsById(doctorId, parsedAppointmentId);
-    if (!appointmentDetails || appointmentDetails.patientid !== parsedPatientId) {
+    if (
+        !appointmentDetails ||
+        appointmentDetails.patientid !== parsedPatientId ||
+        appointmentDetails.status !== 'Scheduled'
+    ) {
         redirect('/dashboard/doctor-appointments');
     }
 

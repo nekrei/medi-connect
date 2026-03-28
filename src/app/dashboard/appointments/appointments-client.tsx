@@ -3,21 +3,19 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { PatientAppointmentRow } from '@/lib/repositories/appointment-repository';
-import { 
-    Calendar, 
-    Clock, 
-    MapPin, 
-    Building2, 
+import {
+    Calendar,
+    Clock,
+    MapPin,
+    Building2,
     User,
     CheckCircle2,
     XCircle,
     Clock3,
     Ban,
-    FileText,
-    Check,
     Star
 } from 'lucide-react';
-import { cancelPatientAppointment, grantPatientMedicalAccessAction } from './actions';
+import { cancelPatientAppointment } from './actions';
 
 interface PatientAppointmentsClientProps {
     initialAppointments: PatientAppointmentRow[];
@@ -28,7 +26,7 @@ type FilterType = 'all' | 'upcoming' | 'past';
 export default function PatientAppointmentsClient({ initialAppointments }: PatientAppointmentsClientProps) {
     const [appointments, setAppointments] = useState(initialAppointments);
     const [filter, setFilter] = useState<FilterType>('all');
-    
+
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
     const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
     const [selectedDoctorName, setSelectedDoctorName] = useState<string>('');
@@ -39,19 +37,8 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
     const handleCancel = async (id: number) => {
         try {
             await cancelPatientAppointment(id);
-            setAppointments(prev => prev.map(app => 
+            setAppointments(prev => prev.map(app =>
                 app.appointmentid === id ? { ...app, status: 'Cancelled' as any } : app
-            ));
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleGrantAccess = async (id: number) => {
-        try {
-            await grantPatientMedicalAccessAction(id);
-            setAppointments(prev => prev.map(app => 
-                app.appointmentid === id ? { ...app, history_access: 'Granted' } : app
             ));
         } catch (err) {
             console.error(err);
@@ -114,7 +101,7 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'Completed': return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
-            case 'Cancelled': 
+            case 'Cancelled':
             case 'Denied': return <XCircle className="w-5 h-5 text-red-500" />;
             case 'Absent': return <Ban className="w-5 h-5 text-slate-500" />;
             case 'Scheduled': return <Calendar className="w-5 h-5 text-blue-500" />;
@@ -126,7 +113,7 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'Completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-            case 'Cancelled': 
+            case 'Cancelled':
             case 'Denied': return 'bg-red-100 text-red-700 border-red-200';
             case 'Absent': return 'bg-slate-100 text-slate-700 border-slate-200';
             case 'Scheduled': return 'bg-blue-100 text-blue-700 border-blue-200';
@@ -143,11 +130,10 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                     <button
                         key={f}
                         onClick={() => setFilter(f)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            filter === f 
-                            ? 'bg-white text-blue-600 shadow-sm' 
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
-                        }`}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                            }`}
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
                     </button>
@@ -164,8 +150,8 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                     </div>
                 ) : (
                     filteredAppointments.map((app) => (
-                        <div 
-                            key={app.appointmentid} 
+                        <div
+                            key={app.appointmentid}
                             className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col md:flex-row gap-6 items-start md:items-center hover:border-blue-200 transition-colors shadow-sm hover:shadow-md"
                         >
                             <div className="flex-1 space-y-4">
@@ -181,28 +167,15 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {app.status === 'Completed' && (
-                                            <button 
+                                            <button
                                                 onClick={() => openReviewModal(app.doctorid, app.doctorname)}
                                                 className="flex items-center gap-1.5 text-blue-600 hover:bg-blue-50 px-3 py-1 font-semibold rounded-md text-sm border border-blue-200 transition-colors"
                                             >
                                                 <Star size={16} /> Review Doctor
                                             </button>
                                         )}
-                                        {app.history_access === 'Requested' && (
-                                            <button 
-                                                onClick={() => handleGrantAccess(app.appointmentid)}
-                                                className="flex items-center gap-1.5 text-emerald-600 hover:bg-emerald-50 px-3 py-1 font-semibold rounded-md text-sm border border-emerald-200 transition-colors"
-                                            >
-                                                <FileText size={16} /> Grant History Access
-                                            </button>
-                                        )}
-                                        {app.history_access === 'Granted' && (
-                                            <span className="flex items-center gap-1.5 text-slate-500 bg-slate-50 px-3 py-1 font-semibold rounded-md text-sm border border-slate-200">
-                                                <Check size={16} /> Access Granted
-                                            </span>
-                                        )}
                                         {(app.status === 'Pending' || app.status === 'Scheduled') && (
-                                            <button 
+                                            <button
                                                 onClick={() => handleCancel(app.appointmentid)}
                                                 className="text-red-600 hover:bg-red-50 px-3 py-1 font-semibold rounded-md text-sm border border-red-200 transition-colors"
                                             >
@@ -220,16 +193,16 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-4 h-4 text-slate-400" />
                                         <span>
-                                            {app.timeslot 
-                                                ? format(new Date(app.timeslot), 'MMM dd, yyyy') 
+                                            {app.timeslot
+                                                ? format(new Date(app.timeslot), 'MMM dd, yyyy')
                                                 : (app.requestedat ? format(new Date(app.requestedat), 'MMM dd, yyyy') : 'Date TBD')}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-4 h-4 text-slate-400" />
                                         <span>
-                                            {app.timeslot 
-                                                ? format(new Date(app.timeslot), 'h:mm a') 
+                                            {app.timeslot
+                                                ? format(new Date(app.timeslot), 'h:mm a')
                                                 : app.chamberduration}
                                         </span>
                                     </div>
@@ -256,14 +229,14 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                                 <h3 className="text-xl font-bold text-slate-900">Review Doctor</h3>
                                 <p className="text-sm text-slate-500 mt-1">Dr. {selectedDoctorName}</p>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setReviewModalOpen(false)}
                                 className="text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition"
                             >
                                 <XCircle size={20} />
                             </button>
                         </div>
-                        
+
                         <div className="p-6 space-y-6">
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Rating</label>
@@ -273,16 +246,15 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                                             key={star}
                                             type="button"
                                             onClick={() => setRating(star)}
-                                            className={`p-2 rounded-xl transition ${
-                                                rating >= star ? 'text-yellow-500 bg-yellow-50 border border-yellow-200' : 'text-slate-300 bg-slate-50 border border-slate-200'
-                                            }`}
+                                            className={`p-2 rounded-xl transition ${rating >= star ? 'text-yellow-500 bg-yellow-50 border border-yellow-200' : 'text-slate-300 bg-slate-50 border border-slate-200'
+                                                }`}
                                         >
                                             <Star size={28} className={rating >= star ? 'fill-yellow-500' : ''} />
                                         </button>
                                     ))}
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Comment</label>
                                 <textarea
@@ -293,7 +265,7 @@ export default function PatientAppointmentsClient({ initialAppointments }: Patie
                                     className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
                                 />
                             </div>
-                            
+
                             <div className="pt-2">
                                 <button
                                     onClick={submitReview}

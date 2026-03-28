@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Clock3, Hospital, RefreshCw, Pill, FileText } from 'lucide-react';
-import { requestMedicalHistoryAccessAction } from './actions';
+import { CalendarDays, Clock3, Hospital, RefreshCw, UserCircle2 } from 'lucide-react';
 
 type AppointmentRow = {
     appointmentid: number;
@@ -18,7 +17,6 @@ type AppointmentRow = {
     esttime: string | null;
     status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Denied' | 'Pending' | 'Absent';
     requestedat: string | null;
-    history_access: string | null;
 };
 
 type HospitalFilter = {
@@ -63,17 +61,6 @@ export default function DoctorAppointmentsPage() {
     const [selectedScheduleId, setSelectedScheduleId] = useState('All');
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
-
-    const handleRequestAccess = async (appointmentId: number) => {
-        try {
-            await requestMedicalHistoryAccessAction(appointmentId);
-            setAppointments(prev => prev.map(app =>
-                app.appointmentid === appointmentId ? { ...app, history_access: 'Requested' } : app
-            ));
-        } catch (error) {
-            console.error("Failed to request access", error);
-        }
-    };
 
     useEffect(() => {
         let active = true;
@@ -241,12 +228,7 @@ export default function DoctorAppointmentsPage() {
                                             <div>
                                                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Patient</p>
                                                 <h2 className="text-xl font-bold text-slate-900">
-                                                    <Link
-                                                        href={`/dashboard/doctor-appointments/patient/${appointment.patientid}/${appointment.appointmentid}`}
-                                                        className="transition hover:text-blue-600"
-                                                    >
-                                                        {appointment.patientname}
-                                                    </Link>
+                                                    <span>{appointment.patientname}</span>
                                                 </h2>
                                                 <p className="text-sm text-slate-500">{appointment.patientemail ?? 'No email provided'}</p>
                                             </div>
@@ -276,39 +258,14 @@ export default function DoctorAppointmentsPage() {
                                                 {appointment.status}
                                             </span>
 
-                                            {appointment.status === 'Scheduled' && (
-                                                <div className="flex flex-col gap-2">
-                                                    <Link
-                                                        href={`/dashboard/doctor-appointments/${appointment.appointmentid}/prescribe`}
-                                                        className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700 transition hover:bg-blue-100 font-medium"
-                                                    >
-                                                        <Pill size={14} /> Write Prescription
-                                                    </Link>
-
-                                                    {appointment.history_access === 'Granted' ? (
-                                                        <Link
-                                                            href={`/dashboard/patient-history/${appointment.patientid}`}
-                                                            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 transition hover:bg-emerald-100 font-medium"
-                                                        >
-                                                            <FileText size={14} /> See Medical History
-                                                        </Link>
-                                                    ) : appointment.history_access === 'Requested' ? (
-                                                        <button
-                                                            disabled
-                                                            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500 font-medium cursor-not-allowed"
-                                                        >
-                                                            <RefreshCw size={14} className="animate-spin" /> Access Requested
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => handleRequestAccess(appointment.appointmentid)}
-                                                            className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700 transition hover:bg-indigo-100 font-medium"
-                                                        >
-                                                            <FileText size={14} /> Request History Access
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
+                                            {appointment.status === 'Scheduled' ? (
+                                                <Link
+                                                    href={`/dashboard/doctor-appointments/patient/${appointment.patientid}/${appointment.appointmentid}`}
+                                                    className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
+                                                >
+                                                    <UserCircle2 size={14} /> View Profile
+                                                </Link>
+                                            ) : null}
                                         </div>
                                     </div>
                                 </article>
