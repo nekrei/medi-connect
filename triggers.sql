@@ -252,7 +252,26 @@ exception
 end;
 $$; 
 
-
-
-
-
+create or replace procedure addchambers(
+    in docid int,
+    in hospid int,
+    in champrice numeric,
+    in appcontact varchar,
+    out Cid int
+) language plpgsql
+as $$
+begin
+    if 1>(select count(*) from doctors where doctorid = docid) then
+        raise exception 'Doctor not found';
+    elsif 1>(select count(*) from hospitals where hospitalid = hospid) then
+        raise exception 'Hospital not found';
+    else
+        insert into chambers (doctorid, hospitalid, checkupprice, appointmentcontact) values 
+        (docid, hospid, champrice, appcontact) returning chamberid into Cid;
+    end if;
+exception
+    when unique_violation then
+        update chambers set checkupprice = champrice, appointmentcontact = appcontact
+        where doctorid = docid and hospitalid = hospid returning chamberid into Cid;
+end;
+$$;

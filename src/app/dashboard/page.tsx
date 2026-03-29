@@ -143,8 +143,13 @@ const MedicalDashboard = async () => {
                                 icon={<Bell size={24} />}
                                 colorClass="bg-amber-100 text-amber-600"
                                 href='/dashboard/doctor-pending-appointments'
-                            />
-                        </div>
+                            />                            <ActionCard
+                                title="Add New Chamber"
+                                description="Setup new practice chambers across hospitals and define customized visiting schedules easily."
+                                icon={<CalendarPlus size={24} />}
+                                colorClass="bg-emerald-100 text-emerald-600"
+                                href='/dashboard/add-chamber'
+                            />                        </div>
                     </div>
                 )}
 

@@ -65,6 +65,14 @@ export default async function DashboardLayout({
                     ) : null}
                     {isDoctor ? (
                         <Link
+                            href="/dashboard/add-chamber"
+                            className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                        >
+                            Add New Chamber
+                        </Link>
+                    ) : null}
+                    {isDoctor ? (
+                        <Link
                             href="/dashboard/doctor-pending-appointments"
                             className="block rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                         >
