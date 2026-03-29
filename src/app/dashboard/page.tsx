@@ -116,7 +116,6 @@ const MedicalDashboard = async () => {
                         <Link href="/profile" className="flex items-center gap-3 pl-3 border-l border-slate-200">
                             <div className="text-right hidden sm:block">
                                 <p className="text-sm font-bold text-slate-800 leading-none">{userName}</p>
-                                <p className="text-xs text-slate-500 mt-1">Patient ID: #4492</p>
                             </div>
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                                 <User size={20} />
