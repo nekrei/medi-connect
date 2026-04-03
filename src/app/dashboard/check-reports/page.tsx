@@ -12,23 +12,7 @@ import {
     Upload,
 } from 'lucide-react';
 
-type TestReportRow = {
-    prescribedTestId: number;
-    prescriptionId: number;
-    appointmentDate: string | null;
-    testId: number;
-    testName: string;
-    testCategory: string;
-    status: 'Pending' | 'Uploaded';
-    uploadedReportId: number | null;
-    reportFileUrl: string | null;
-    reportFileName: string | null;
-    reportMimeType: string | null;
-    reportFileSizeBytes: number | null;
-    uploadedAt: string | null;
-    centerId: number | null;
-    centerName: string | null;
-};
+import { PrescribedTestReportRow as TestReportRow} from '@/lib/repositories/test-report-repository';
 
 export default function CheckReportsPage() {
     const [rows, setRows] = useState<TestReportRow[]>([]);
@@ -115,8 +99,7 @@ export default function CheckReportsPage() {
             });
 
             if (!response.ok) {
-                const payload = (await response.json().catch(() => ({ message: 'Upload failed' }))) as { message?: string };
-                throw new Error(payload.message ?? 'Upload failed');
+                throw new Error('Upload failed');
             }
 
             const reloadResponse = await fetch('/api/tests/reports', { cache: 'no-store' });

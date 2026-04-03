@@ -29,10 +29,6 @@ export default async function PatientHistoryPage({ params }: { params: Promise<{
     // Fetch all prescriptions for the patient
     const pastPrescriptions = await getSearchedPrescriptions({
         patientId: String(parsedPatientId),
-        prescriptionId: null,
-        doctorname: null,
-        fromDate: null,
-        toDate: null
     });
 
     return (

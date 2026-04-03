@@ -99,7 +99,7 @@ export async function DELETE(request: Request) {
     }
 
     const patientId = Number(currentUser.id);
-    if (!Number.isFinite(patientId)) {
+    if (!currentUser) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -144,8 +144,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const patientId = Number(currentUser.id);
-    if (!Number.isFinite(patientId)) {
+    const patientId = currentUser.id;
+    if (!patientId) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
         await writeFile(absoluteFilePath, Buffer.from(arrayBuffer));
 
         const saved = await saveUploadedTestReport({
-            patientId,
+            patientId: parseInt(patientId, 10),
             prescribedTestId,
             centerId,
             fileUrl: publicUrl,

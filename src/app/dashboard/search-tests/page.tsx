@@ -15,23 +15,8 @@ import {
     Mail,
 } from 'lucide-react';
 
-type DiagnosticCenterTestRow = {
-    centerId: number;
-    centerName: string;
-    contactNumber: string | null;
-    email: string | null;
-    openingTime: string | null;
-    closingTime: string | null;
-    districtName: string;
-    thanaName: string;
-    holdingNumber: string | null;
-    road: string | null;
-    propertyName: string | null;
-    testId: number;
-    testName: string;
-    testCategory: string | null;
-    price: number;
-};
+import { DiagnosticCenterTestRow } from '@/lib/repositories/test-report-repository';
+
 
 type LocationOptionRow = {
     districtname: string;
@@ -62,9 +47,9 @@ export default function SearchTestsPage() {
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
     const [rows, setRows] = useState<DiagnosticCenterTestRow[]>([]);
+    const [displayRows, setDisplayRows] = useState<DiagnosticCenterTestRow[]>([]);
     const [locationOptions, setLocationOptions] = useState<LocationOptionRow[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
     const [expandedCenterKey, setExpandedCenterKey] = useState<string | null>(null);
 
     useEffect(() => {
@@ -88,29 +73,10 @@ export default function SearchTestsPage() {
             }
         }
 
-        loadLocationOptions();
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        async function runSearch() {
+        async function LoadAvailableTests() {
             try {
                 setIsLoading(true);
-                setErrorMessage('');
-
-                const params = new URLSearchParams();
-                if (query.trim()) params.set('query', query.trim());
-                if (district !== 'All') params.set('district', district);
-                if (thana !== 'All') params.set('thana', thana);
-                if (minPrice.trim()) params.set('minPrice', minPrice.trim());
-                if (maxPrice.trim()) params.set('maxPrice', maxPrice.trim());
-                if (initialTestId) params.set('testId', initialTestId);
-
-                const response = await fetch(`/api/diagnostics/search?${params.toString()}`, { cache: 'no-store' });
+                const response = await fetch(`/api/diagnostics/search`, { cache: 'no-store' });
                 if (!response.ok) {
                     const payload = (await response.json().catch(() => ({ message: 'Search failed' }))) as { message?: string };
                     throw new Error(payload.message ?? 'Search failed');
@@ -124,22 +90,49 @@ export default function SearchTestsPage() {
             } catch (error) {
                 if (isMounted) {
                     setRows([]);
-                    const message = error instanceof Error ? error.message : 'Search failed';
-                    setErrorMessage(message);
                 }
-            } finally {
+            }
+            finally {
                 if (isMounted) {
                     setIsLoading(false);
                 }
             }
         }
 
-        runSearch();
-
+        loadLocationOptions();
+        LoadAvailableTests();
         return () => {
             isMounted = false;
         };
-    }, [district, initialTestId, maxPrice, minPrice, query, thana]);
+    }, []);
+
+    useEffect(() => {
+        let filtered = rows.filter((row) => {
+            return (!query || row.testName.toLowerCase().includes(query.trim().toLowerCase()) || row.centerName.toLowerCase().includes(query.trim().toLowerCase()))
+                && (district === 'All' || row.districtName === district)
+                && (thana === 'All' || row.thanaName === thana)
+                && (!minPrice || Number(row.price) >= Number(minPrice))
+                && (!maxPrice || Number(row.price) <= Number(maxPrice));
+        });
+
+        filtered = Array.from(
+            new Map(
+                filtered.map((row) => [
+                    `${row.testId}-${row.centerId}-${Number(row.price)}`,
+                    row,
+                ])
+            ).values()
+        );
+
+        setDisplayRows(filtered.sort((a, b) => {
+            const testCompare = a.testName.localeCompare(b.testName);
+            if (testCompare !== 0) return testCompare;
+            const priceCompare = Number(a.price) - Number(b.price);
+            if (priceCompare !== 0) return priceCompare;
+            return a.centerName.localeCompare(b.centerName);
+        }));
+
+    }, [rows, district, initialTestId, maxPrice, minPrice, query, thana]);
 
     const districtOptions = useMemo(() => {
         return ['All', ...Array.from(new Set(locationOptions.map((option) => option.districtname))).sort()];
@@ -147,30 +140,12 @@ export default function SearchTestsPage() {
 
     const thanaOptions = useMemo(() => {
         const all = district === 'All'
-            ? locationOptions
+            ? []
             : locationOptions.filter((option) => option.districtname === district);
 
         return ['All', ...Array.from(new Set(all.map((option) => option.thananame))).sort()];
     }, [district, locationOptions]);
 
-    const displayRows = useMemo<DiagnosticCenterTestRow[]>(() => {
-        const deduped = Array.from(
-            new Map(
-                rows.map((row) => [
-                    `${row.testId}-${row.centerId}-${Number(row.price)}`,
-                    row,
-                ])
-            ).values()
-        );
-
-        return deduped.sort((a, b) => {
-            const testCompare = a.testName.localeCompare(b.testName);
-            if (testCompare !== 0) return testCompare;
-            const priceCompare = Number(a.price) - Number(b.price);
-            if (priceCompare !== 0) return priceCompare;
-            return a.centerName.localeCompare(b.centerName);
-        });
-    }, [rows]);
 
     return (
         <main className="min-h-screen bg-slate-50 p-4 md:p-8 lg:p-12">
@@ -258,7 +233,7 @@ export default function SearchTestsPage() {
                             </select>
                         </label>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <fieldset className="grid grid-cols-2 gap-3">
                             <label className="space-y-2">
                                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Min Price</span>
                                 <input
@@ -282,15 +257,10 @@ export default function SearchTestsPage() {
                                     className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-blue-200 transition focus:ring"
                                 />
                             </label>
-                        </div>
+                        </fieldset>
                     </div>
                 </section>
 
-                {errorMessage ? (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                        {errorMessage}
-                    </div>
-                ) : null}
 
                 <section className="space-y-4">
                     {isLoading ? (

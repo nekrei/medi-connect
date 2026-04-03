@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { pool } from "@/lib/db";
 import { NextResponse } from "next/server";
 export type Prescription = {
@@ -9,6 +10,10 @@ export type Prescription = {
     followup: string;
 }
 export async function POST(req: Request) {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'Doctor') {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const client = await pool.connect();
     try{
         const body = await req.json();

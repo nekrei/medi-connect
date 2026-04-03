@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { PoolClient } from '@neondatabase/serverless';
 import { pool } from '@/lib/db';
+import { getCurrentUser } from '../auth/current-user';
 
 type DbClient = PoolClient;
 
@@ -52,60 +53,14 @@ export type DiagnosticCenterTestRow = {
     price: number;
 };
 
-async function getDiagnosticCenterTableName(client: DbClient): Promise<'diagnostic_center' | 'diagnostic_centers'> {
-    const response = await client.query<{ table_name: string }>(
-        `
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
-              AND table_name IN ('diagnostic_center', 'diagnostic_centers')
-            ORDER BY CASE table_name
-                WHEN 'diagnostic_center' THEN 0
-                ELSE 1
-            END
-            LIMIT 1
-        `
-    );
-
-    if (response.rows.length === 0) {
-        return 'diagnostic_center';
-    }
-
-    const tableName = response.rows[0].table_name;
-    if (tableName === 'diagnostic_centers') {
-        return 'diagnostic_centers';
-    }
-
-    return 'diagnostic_center';
-}
-
-async function ensureUploadedReportTable(client: DbClient) {
-    await client.query(`
-        CREATE TABLE IF NOT EXISTS uploaded_test_reports (
-            uploaded_report_id SERIAL PRIMARY KEY,
-            prescribed_test_id INT NOT NULL UNIQUE REFERENCES prescribed_test (prescibed_testid) ON DELETE CASCADE,
-            patient_id INT NOT NULL REFERENCES users (userid) ON DELETE CASCADE,
-            center_id INT NULL,
-            file_url TEXT NOT NULL,
-            file_name VARCHAR(255) NOT NULL,
-            mime_type VARCHAR(100) NOT NULL,
-            file_size_bytes INT NOT NULL,
-            uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-}
-
 export async function getPatientPrescribedTestsWithReports(patientId: number): Promise<PrescribedTestReportRow[]> {
     const client = await pool.connect();
 
     try {
-        await ensureUploadedReportTable(client);
-        const centerTableName = await getDiagnosticCenterTableName(client);
-
         const result = await client.query<Omit<PrescribedTestReportRow, 'status'>>(
             `
             SELECT
-                pt.prescibed_testid AS "prescribedTestId",
+                pt.prescribed_testid AS "prescribedTestId",
                 pt.prescriptionid AS "prescriptionId",
                 TO_CHAR(p.appointmentdate::date, 'YYYY-MM-DD') AS "appointmentDate",
                 t.testid AS "testId",
@@ -123,11 +78,11 @@ export async function getPatientPrescribedTestsWithReports(patientId: number): P
             JOIN prescription p ON p.prescriptionid = pt.prescriptionid
             JOIN tests t ON t.testid = pt.testid
             LEFT JOIN uploaded_test_reports utr
-                ON utr.prescribed_test_id = pt.prescibed_testid
+                ON utr.prescribed_test_id = pt.prescribed_testid
                 AND utr.patient_id = $1
-            LEFT JOIN ${centerTableName} dc ON dc.centerid = utr.center_id
+            LEFT JOIN diagnostic_center dc ON dc.centerid = utr.center_id
             WHERE p.patientid = $1
-            ORDER BY p.appointmentdate DESC NULLS LAST, pt.prescibed_testid DESC
+            ORDER BY p.appointmentdate DESC NULLS LAST, pt.prescribed_testid DESC
             `,
             [patientId]
         );
@@ -154,20 +109,19 @@ export async function saveUploadedTestReport(params: {
 
     try {
         await client.query('BEGIN');
-        await ensureUploadedReportTable(client);
 
-        const ownershipCheck = await client.query<{ prescribed_test_id: number }>(
+        const ownershipCheck = await client.query< {prescribed_test_id : number} > (
             `
-                SELECT pt.prescibed_testid AS prescribed_test_id
-                FROM prescribed_test pt
-                JOIN prescription p ON p.prescriptionid = pt.prescriptionid
-                WHERE pt.prescibed_testid = $1
-                  AND p.patientid = $2
+                SELECT pt.prescribed_testid as prescribed_test_id
+                FROM prescribed_test pt 
+                JOIN prescription p on p.prescriptionid = pt.prescriptionid
+                WHERE 
+                    p.patientid = $1
+                    AND pt.prescribed_testid = $2
                 LIMIT 1
-            `,
-            [params.prescribedTestId, params.patientId]
-        );
-
+            `,[params.patientId, params.prescribedTestId]
+        )
+        
         if (ownershipCheck.rows.length === 0) {
             await client.query('ROLLBACK');
             throw new Error('INVALID_TEST_OR_UNAUTHORIZED');
@@ -195,15 +149,6 @@ export async function saveUploadedTestReport(params: {
                     uploaded_at
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
-                ON CONFLICT (prescribed_test_id)
-                DO UPDATE SET
-                    patient_id = EXCLUDED.patient_id,
-                    center_id = EXCLUDED.center_id,
-                    file_url = EXCLUDED.file_url,
-                    file_name = EXCLUDED.file_name,
-                    mime_type = EXCLUDED.mime_type,
-                    file_size_bytes = EXCLUDED.file_size_bytes,
-                    uploaded_at = CURRENT_TIMESTAMP
                 RETURNING
                     uploaded_report_id AS "uploadedReportId",
                     prescribed_test_id AS "prescribedTestId",
@@ -242,7 +187,6 @@ export async function deleteUploadedTestReportByPrescribedTestId(params: {
     const client = await pool.connect();
 
     try {
-        await ensureUploadedReportTable(client);
 
         const result = await client.query<{
             fileUrl: string | null;
@@ -269,20 +213,15 @@ export async function deleteUploadedTestReportByPrescribedTestId(params: {
     }
 }
 
-export async function searchDiagnosticCenterTests(params: {
-    query: string;
-    district: string | null;
-    thana: string | null;
-    minPrice: number | null;
-    maxPrice: number | null;
-    testId: number | null;
-}): Promise<DiagnosticCenterTestRow[]> {
+export async function searchDiagnosticCenterTests(): Promise<DiagnosticCenterTestRow[]> {
     const client = await pool.connect();
 
-    try {
-        const centerTableName = await getDiagnosticCenterTableName(client);
-        const safeQuery = params.query.trim();
+    const currentUser = getCurrentUser();
+    if(!currentUser){
+        throw new Error('Unauthorized');
+    }
 
+    try {
         const query = `
             SELECT
                 dc.centerid AS "centerId",
@@ -302,31 +241,17 @@ export async function searchDiagnosticCenterTests(params: {
                 cat.price AS "price"
             FROM center_available_tests cat
             JOIN tests t ON t.testid = cat.testid
-            JOIN ${centerTableName} dc ON dc.centerid = cat.centerid
+            JOIN  diagnostic_center dc ON dc.centerid = cat.centerid
             JOIN locations l ON l.locationid = dc.locationid
             JOIN thanas t2 ON t2.thanaid = l.thanaid
             JOIN districts d ON d.districtid = t2.districtid
-            WHERE
-                ($1::text = '' OR dc.centername ILIKE '%' || $1::text || '%' OR t.testname ILIKE '%' || $1::text || '%')
-                AND ($2::text IS NULL OR d.districtname = $2::text)
-                AND ($3::text IS NULL OR t2.thananame = $3::text)
-                AND ($4::numeric IS NULL OR cat.price >= $4::numeric)
-                AND ($5::numeric IS NULL OR cat.price <= $5::numeric)
-                AND ($6::int IS NULL OR t.testid = $6::int)
             ORDER BY
                 dc.centername ASC,
                 cat.price ASC,
                 t.testname ASC
         `;
 
-        const result = await client.query<DiagnosticCenterTestRow>(query, [
-            safeQuery,
-            params.district,
-            params.thana,
-            params.minPrice,
-            params.maxPrice,
-            params.testId,
-        ]);
+        const result = await client.query<DiagnosticCenterTestRow>(query);
 
         return result.rows;
     } finally {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Activity } from "lucide-react";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
+import LogoutButton from "@/components/auth/logout-button";
 
 export const metadata: Metadata = {
     title: "Dashboard | MediConnect",
@@ -40,8 +41,8 @@ export default async function DashboardLayout({
                             key={item.label}
                             href={item.href}
                             className={`block rounded-lg px-4 py-2.5 text-sm font-medium transition ${item.active
-                                    ? "bg-blue-50 text-blue-600"
-                                    : "text-slate-600 hover:bg-slate-50"
+                                ? "bg-blue-50 text-blue-600"
+                                : "text-slate-600 hover:bg-slate-50"
                                 }`}
                         >
                             {item.label}
@@ -97,9 +98,10 @@ export default async function DashboardLayout({
                     ) : null}
                 </nav>
 
-                <div className="mt-auto rounded-xl bg-slate-100 p-4">
-                    <p className="mb-1 text-xs font-bold uppercase text-slate-400">Support</p>
-                    <p className="text-sm font-medium text-slate-700">Need help? Chat with a nurse 24/7</p>
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Account</p>
+                    <p className="mb-3 text-sm text-slate-600">Sign out of your dashboard session safely.</p>
+                    <LogoutButton />
                 </div>
             </aside>
 

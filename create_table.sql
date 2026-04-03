@@ -255,7 +255,7 @@ create table prescribed_medicine (
 
 --drop TABLE prescribed_test;
 create table prescribed_test (
-   prescibed_testid serial primary key,
+   prescribed_testid serial primary key,
    testid           int,
    prescriptionid   int,
    unique ( testid,

@@ -13,29 +13,12 @@ import {
     Download,
 } from 'lucide-react';
 import { PrescriptionSearchRow, Prescription } from '@/lib/repositories/prescription-repository';
-import { set } from 'zod';
-
-type PrescribedMedicine = {
-    prescribedMedicineId: number;
-    medicineName: string;
-    dosage: string;
-    frequency: string;
-    duration: string;
-    instructions: string;
-};
-
-type PrescribedTest = {
-    prescribedTestId: number;
-    testName: string;
-    category: string;
-    reason: string;
-};
-
-
 
 
 
 export default function CheckPrescriptionPage() {
+    const [isLoadingPrescriptions, setIsLoadingPrescriptions] = useState(false);
+    const [Prescriptions, setPrescriptions] = useState<PrescriptionSearchRow[]>([]);
     const [filteredPrescriptions, setfilteredPrescriptions] = useState<PrescriptionSearchRow[]>([]);
     const [selectedPrescriptinID, setSelectedPrescriptionID] = useState<number | null>(null);
     const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
@@ -45,38 +28,54 @@ export default function CheckPrescriptionPage() {
     const [toDateFilter, setToDateFilter] = useState('');
 
     useEffect(() => {
-        async function fetchPrescription() {
+        let isMounted = true;
+        async function LoadPrescriptions() {
+            try {
+                setIsLoadingPrescriptions(true);
+                const response = await fetch(`/api/prescription/filterprescription`);
+                if (response.ok && isMounted) {
+                    setPrescriptions(await response.json());
+                }
+                else {
+                    console.error('Failed to fetch prescriptions:', response.statusText);
+                    if (isMounted) setPrescriptions([]);
+                }
+            }
+            catch (error) {
+                console.error('Error fetching prescriptions:', error);
+                if (isMounted) setPrescriptions([]);
+            }
+            finally {
+                if (isMounted) setIsLoadingPrescriptions(false);
+            }
+        }
+        LoadPrescriptions();
+
+        return () => {
+            isMounted = false;
+        }
+    }, []);
+
+    useEffect(() => {
+        async function filterPrescription() {
 
             const doctorQuery = doctorFilter.trim().toLowerCase();
             const idQuery = prescriptionIdFilter.trim();
             const fromDateLocal = fromDateFilter ? `${fromDateFilter}T00:00:00` : null;
             const toDateLocal = toDateFilter ? `${toDateFilter}T23:59:59` : null;
 
-            const params = new URLSearchParams();
-            if (doctorQuery) params.set("doctorname", doctorQuery);
-            if (idQuery) params.set("prescriptionId", idQuery);
-            if (fromDateLocal) params.set("fromDate", fromDateLocal);
-            if (toDateLocal) params.set("toDate", toDateLocal);
-
-            try {
-                const response = await fetch(`/api/prescription/filterprescription?${params.toString()}`, { cache: 'no-store' });
-                if (response.ok) {
-                    setfilteredPrescriptions(await response.json());
-                }
-                else {
-                    console.error('Failed to fetch prescriptions:', response.statusText);
-                    setfilteredPrescriptions([]);
-                }
-            }
-            catch (error) {
-                console.error('Error fetching prescriptions:', error);
-                setfilteredPrescriptions([]);
-            }
+            setfilteredPrescriptions(
+                Prescriptions.filter((row) => {
+                    return (!doctorQuery || row.doctorName.toLowerCase().includes(doctorQuery))
+                        && (!idQuery || row.prescriptionId == parseInt(idQuery, 10))
+                        && (!fromDateLocal || new Date(row.appointmentDate) >= new Date(fromDateLocal))
+                        && (!toDateLocal || new Date(row.appointmentDate) <= new Date(toDateLocal));
+                })
+            );
         }
+        filterPrescription();
 
-        fetchPrescription();
-
-    }, [doctorFilter, fromDateFilter, prescriptionIdFilter, toDateFilter]);
+    }, [Prescriptions, doctorFilter, fromDateFilter, prescriptionIdFilter, toDateFilter]);
 
     const handleDownloadPdf = () => {
         window.print();
@@ -88,7 +87,7 @@ export default function CheckPrescriptionPage() {
     };
 
     useEffect(() => {
-
+        let isMounted = true;
         async function fetchSelectedPrescription() {
             if (!selectedPrescriptinID) {
                 setSelectedPrescription(null);
@@ -100,20 +99,24 @@ export default function CheckPrescriptionPage() {
             try {
                 const response = await fetch(`/api/prescription/selectedPrescription?${searchParams.toString()}`, { cache: 'no-store' });
                 if (response.ok) {
-                    setSelectedPrescription(await response.json());
+                    if(isMounted) setSelectedPrescription(await response.json());
                 }
                 else {
                     console.error('Failed to fetch selected prescription:', response.statusText);
-                    setSelectedPrescription(null);
+                    if(isMounted) setSelectedPrescription(null);
                 }
             }
             catch (error) {
                 console.error('Error fetching selected prescription:', error);
-                setSelectedPrescription(null);
+                if(isMounted) setSelectedPrescription(null);
             }
         }
 
         fetchSelectedPrescription();
+
+        return () => {
+            isMounted = false;
+        }
 
     }, [selectedPrescriptinID]);
 
@@ -269,7 +272,13 @@ export default function CheckPrescriptionPage() {
                                             </td>
                                         </tr>
                                     ))}
-                                    {filteredPrescriptions.length === 0 && (
+                                    {isLoadingPrescriptions ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500">
+                                                Loading Prescriptions...
+                                            </td>
+                                        </tr>
+                                    ): filteredPrescriptions.length === 0 && (
                                         <tr>
                                             <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500">
                                                 No prescriptions found for the selected filters.

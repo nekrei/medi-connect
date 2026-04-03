@@ -58,10 +58,6 @@ const MedicalDashboard = async () => {
     // FETCH PRESCRIPTIONS
     const pastPrescriptions = await getSearchedPrescriptions({
         patientId: user.id,
-        prescriptionId: null,
-        doctorname: null,
-        fromDate: null,
-        toDate: null
     });
     
     const upcomingAppointments = patientAppointments.filter(a => a.status === 'Pending' || a.status === 'Scheduled');

@@ -3,6 +3,7 @@ import 'server-only';
 import { sql } from '@/lib/db';
 import { DoctorSearchRow } from './doctor-appointment-repository';
 import { text } from 'stream/consumers';
+import { getCurrentUser } from '../auth/current-user';
 
 type PrescribedMedicine = {
     prescribedMedicineId: number;
@@ -47,12 +48,8 @@ export type PrescriptionSearchRow = {
 }
 export async function getSearchedPrescriptions(params: {
     patientId: string;
-    prescriptionId: number | null;
-    doctorname: string | null;
-    fromDate: string | null;
-    toDate: string | null;
 }): Promise<Array<PrescriptionSearchRow>> {
-    const { patientId, prescriptionId, doctorname, fromDate, toDate } = params;
+    const { patientId } = params;
 
     const rows = (await sql`
         SELECT
@@ -68,10 +65,6 @@ export async function getSearchedPrescriptions(params: {
             JOIN USERS D ON P.DOCTORID = D.USERID
         WHERE
             P.PATIENTID = ${patientId}
-             AND (COALESCE(${prescriptionId}::text, '') = '' OR P.PRESCRIPTIONID = ${prescriptionId}::int)
-             AND (${fromDate}::timestamp IS NULL OR P.APPOINTMENTDATE >= ${fromDate}::timestamp)
-             AND (${toDate}::timestamp IS NULL OR P.APPOINTMENTDATE <= ${toDate}::timestamp)
-             AND (COALESCE(${doctorname}::text, '') = '' OR (D.FIRSTNAME || ' ' || D.LASTNAME) ILIKE '%' || ${doctorname}::text || '%')
     `) as Array<PrescriptionSearchRow>;
             
     return rows;
@@ -80,6 +73,7 @@ export async function getSearchedPrescriptions(params: {
 export async function getPrescriptionById(prescriptionId: number): Promise<Prescription | null> {
     const headerRows = (await sql`
         SELECT
+            U.USERID AS "patientId",
             P.PRESCRIPTIONID AS "prescriptionId",
             TO_CHAR(P.APPOINTMENTDATE::date, 'YYYY-MM-DD') AS "appointmentDate",
             (D.FIRSTNAME || ' ' || D.LASTNAME) AS "doctorName",
@@ -103,6 +97,7 @@ export async function getPrescriptionById(prescriptionId: number): Promise<Presc
             P.PRESCRIPTIONID = ${prescriptionId}
         LIMIT 1
     `) as Array<{
+        patientId: number;
         prescriptionId: number;
         appointmentDate: string;
         doctorName: string;
@@ -120,6 +115,11 @@ export async function getPrescriptionById(prescriptionId: number): Promise<Presc
     }
 
     const header = headerRows[0];
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser || (currentUser.id !== header.patientId.toString())) {
+        return null;
+    }
 
     const specializationRows = (await sql`
         SELECT
@@ -159,7 +159,7 @@ export async function getPrescriptionById(prescriptionId: number): Promise<Presc
 
     const testRows = (await sql`
         SELECT
-            PT.PRESCIBED_TESTID AS "prescribedTestId",
+            PT.prescribed_testid AS "prescribedTestId",
             T.TESTNAME AS "testName",
             COALESCE(T.TESTCATEGORY, '') AS "category",
             COALESCE(T.DESCRIPTION, '') AS "reason"
@@ -169,7 +169,7 @@ export async function getPrescriptionById(prescriptionId: number): Promise<Presc
         WHERE
             PT.PRESCRIPTIONID = ${prescriptionId}
         ORDER BY
-            PT.PRESCIBED_TESTID ASC
+            PT.prescribed_testid ASC
     `) as Array<{
         prescribedTestId: number;
         testName: string;
