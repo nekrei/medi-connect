@@ -14,15 +14,8 @@ export type DoctorSearchRow = {
     availabledays: number[] | null;
 };
 
-export async function searchDoctors(params: {
-    name: string | '';
-    district: string | null;
-    thana: string | null;
-    specialization: string | null;
-    availableDay: string | null;
-}): Promise<Array<DoctorSearchRow>> {
-    const { name, district, thana, specialization, availableDay } = params;
-    
+export async function searchDoctors(): Promise<Array<DoctorSearchRow>> {
+
     const rows = await sql`
         SELECT 
             d.doctorid,
@@ -41,12 +34,7 @@ export async function searchDoctors(params: {
         JOIN thanas t on l.thanaid = t.thanaid
         JOIN districts dist on t.districtid = dist.districtid
         LEFT JOIN reviews r on d.doctorid = r.doctorid
-        WHERE 
-            (COALESCE(${name}::text, '') = '' OR (u.firstname || ' ' || u.lastname) ILIKE '%' || ${name}::text || '%')
-            AND (COALESCE(${district}::text, '') = '' OR dist.districtname = ${district}::text)
-            AND (COALESCE(${thana}::text, '') = '' OR t.thananame = ${thana}::text)
-            AND (COALESCE(${specialization}::text, '') = '' OR ${specialization}::text = ANY(get_doctor_specializations(d.doctorid)))
-            AND (COALESCE(${availableDay}::text, '') = '' OR ${availableDay}::int = ANY(get_chamber_available_days(c.chamberid)))
+        
         GROUP BY
             d.doctorid, u.firstname, u.lastname, h.hospitalname, dist.districtname, t.thananame, c.chamberid
         `;

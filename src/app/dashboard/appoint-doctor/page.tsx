@@ -4,110 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, MapPin, Stethoscope, CalendarDays, LocateFixed, Star } from "lucide-react";
 import { DoctorSearchRow } from "@/lib/repositories/doctor-appointment-repository";
-import LocationMap, { MapCoords, LocDetails } from "@/components/LeafletMap";
+import dynamic from "next/dynamic";
+import type { MapCoords, LocDetails } from "@/components/LeafletMap";
+
+const LocationMap = dynamic(() => import("@/components/LeafletMap"), {
+    ssr: false,
+});
 
 type LocationOptionRow = {
     districtname: string;
     thananame: string;
 };
 
-type Doctor = {
-    id: number;
-    name: string;
-    degrees: string;
-    specialty: string;
-    district: string;
-    thana: string;
-    availableDay: string;
-    visitTime: string;
-    onLeave?: string;
-};
 
-const doctors: Doctor[] = [
-    {
-        id: 1,
-        name: "Prof. Dr. M. Nazrul Islam",
-        degrees: "MBBS, FCPS, FRCP (London), FACC, FESC",
-        specialty: "Cardiology",
-        district: "Dhaka",
-        thana: "Dhanmondi",
-        availableDay: "Sunday",
-        visitTime: "10:00 AM - 01:00 PM",
-    },
-    {
-        id: 2,
-        name: "Prof. Dr. A. A. Shafi Majumder",
-        degrees: "MBBS, D.Card, MD (Card), FACC",
-        specialty: "Cardiology",
-        district: "Dhaka",
-        thana: "Dhanmondi",
-        availableDay: "Monday",
-        visitTime: "04:00 PM - 07:00 PM",
-    },
-    {
-        id: 3,
-        name: "Prof. Dr. Enamul Karim",
-        degrees: "MBBS, FCPS (Medicine), FACP (USA)",
-        specialty: "Medicine",
-        district: "Dhaka",
-        thana: "Uttara",
-        availableDay: "Tuesday",
-        visitTime: "05:00 PM - 08:00 PM",
-    },
-    {
-        id: 4,
-        name: "Dr. Rajashis Chakraborti",
-        degrees: "MBBS, FCPS (Medicine), MD (Chest Diseases)",
-        specialty: "Chest Medicine",
-        district: "Dhaka",
-        thana: "Mirpur",
-        availableDay: "Wednesday",
-        visitTime: "06:00 PM - 09:00 PM",
-    },
-    {
-        id: 5,
-        name: "Prof. Dr. Hasan Zahidur Rahman",
-        degrees: "MBBS, MD (Neurology)",
-        specialty: "Neurology",
-        district: "Dhaka",
-        thana: "Dhanmondi",
-        availableDay: "Thursday",
-        visitTime: "07:00 PM - 09:00 PM",
-    },
-    {
-        id: 6,
-        name: "Prof. Dr. Anisul Haque",
-        degrees: "MBBS, Ph.D, FCPS, FRCP (Edin)",
-        specialty: "Neurology",
-        district: "Dhaka",
-        thana: "Dhanmondi",
-        availableDay: "Saturday",
-        visitTime: "11:00 AM - 01:00 PM",
-        onLeave: "On leave until Jun 30, 2026",
-    },
-    {
-        id: 7,
-        name: "Prof. Dr. M.T. Rahman",
-        degrees: "MBBS, FCPS, Trained in France & Japan",
-        specialty: "Gastroenterology",
-        district: "Dhaka",
-        thana: "Shantinagar",
-        availableDay: "Sunday",
-        visitTime: "03:00 PM - 06:00 PM",
-    },
-    {
-        id: 8,
-        name: "Dr. Faria Afsana",
-        degrees: "MBBS, DEM, MD (Endocrinology), FACE",
-        specialty: "Endocrine Medicine",
-        district: "Dhaka",
-        thana: "Uttara",
-        availableDay: "Monday",
-        visitTime: "06:00 PM - 08:00 PM",
-    },
-];
-
-const getUnique = (items: string[]) => ["All", ...Array.from(new Set(items))];
+const getUnique = (items: string[]) => ["All", ...Array.from(new Set(items)).sort()];
 
 const THANA_COORDS: Record<string, { lat: number; lng: number }> = {
     Dhanmondi: { lat: 23.7465, lng: 90.3760 },
@@ -160,14 +70,6 @@ const WEEKDAY_CIRCLES = [
     { key: "Saturday", label: "S" },
 ];
 
-const getAvailableDaySet = (availableDay: string) => {
-    return new Set(
-        availableDay
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean)
-    );
-};
 
 const DayToNumberMap: Record<string, number> = {
     Sunday: 0,
@@ -190,6 +92,8 @@ export default function AppointDoctorPage() {
     const [locationMessage, setLocationMessage] = useState("");
     const [locationOptions, setLocationOptions] = useState<LocationOptionRow[]>([]);
     const [specialtyOptionsData, setSpecialtyOptionsData] = useState<string[]>([]);
+    const [doctors, setDoctors] = useState<DoctorSearchRow[]>([]);
+    const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
     const [filteredDoctors, setFilteredDoctors] = useState<DoctorSearchRow[]>([]);
     const [currentLocation, setCurrentLocation] = useState<MapCoords>({
         lat: 23.8103,
@@ -198,6 +102,28 @@ export default function AppointDoctorPage() {
 
     useEffect(() => {
         let isMounted = true;
+
+        async function loadDoctors() {
+            try {
+                setIsLoadingDoctors(true);
+                const response = await fetch(`/api/doctors`, { cache: 'no-store' });
+                if (!response.ok) {
+                    console.error("Failed to fetch doctors:", response.statusText);
+                    if (isMounted) {
+                        setDoctors([]);
+                    }
+                    return;
+                }
+                const doctors = await response.json();
+                if (isMounted) {
+                    setDoctors(doctors);
+                }
+            } catch {
+                if (isMounted) setDoctors([]);
+            } finally {
+                if (isMounted) setIsLoadingDoctors(false);
+            }
+        }
 
         async function loadLocationOptions() {
             try {
@@ -225,7 +151,7 @@ export default function AppointDoctorPage() {
             try {
                 const response = await fetch('/api/specializations/options', { cache: 'no-store' });
                 if (!response.ok) {
-                    return [];
+                    return;
                 }
                 const json = (await response.json()) as { data?: string[] };
 
@@ -234,7 +160,7 @@ export default function AppointDoctorPage() {
                 }
             } catch {
                 if (isMounted) {
-                    setLocationOptions([]);
+                    setSpecialtyOptionsData([]);
                 }
             } finally {
 
@@ -243,17 +169,17 @@ export default function AppointDoctorPage() {
 
         loadLocationOptions();
         loadSpecialtyOptions();
-
-
+        loadDoctors();
 
         return () => {
             isMounted = false;
         };
     }, []);
 
+    // Loading the filter options
     const districtOptions = useMemo(() => {
-        const districts = Array.from(new Set(locationOptions.map((row) => row.districtname)));
-        return ["All", ...districts.sort()];
+        const districts = locationOptions.map((row) => row.districtname);
+        return [...getUnique(districts)];
     }, [locationOptions]);
 
     const thanaOptions = useMemo(() => {
@@ -265,42 +191,34 @@ export default function AppointDoctorPage() {
             .filter((row) => row.districtname === district)
             .map((row) => row.thananame);
 
-        return ["All", ...Array.from(new Set(thanas)).sort()];
+        return [...getUnique(thanas)];
     }, [district, locationOptions]);
-
-
 
     const specialtyOptions = useMemo(
         () => getUnique(specialtyOptionsData),
         [specialtyOptionsData]
     );
-    const dayOptions = useMemo(() => getUnique(doctors.map((d) => d.availableDay)), []);
+
+    const dayOptions = useMemo(() => getUnique(WEEKDAY_CIRCLES.map((row) => row.key)), []);
 
     useEffect(() => {
         async function fetchDoctors() {
-            const params = new URLSearchParams();
             const name = query.trim().toLowerCase();
 
-            if (name) params.set("name", name);
-            if (district && district !== "All") params.set("district", district);
-            if (thana && thana !== "All") params.set("thana", thana);
-            if (specialty && specialty !== "All") params.set("specialization", specialty);
-            if (day && day !== "All") params.set("availableDay", String(DayToNumberMap[day]));
+            setFilteredDoctors(
+                doctors.filter((row) => {
+                    return (!name || row.name.toLowerCase().includes(name))
+                        && (!district || district === 'All' || row.district === district)
+                        && (!thana || thana === 'All' || row.thana === thana)
+                        && (!specialty || specialty === 'All' || row.specialization === specialty)
+                        && (!day || day === 'All' || row.availabledays?.includes(DayToNumberMap[day]));
+                })
+            )
 
-            try {
-                const response = await fetch(`/api/doctors?${params.toString()}`, { cache: 'no-store' });
-                if (!response.ok) {
-                    setFilteredDoctors([]);
-                    return;
-                }
-                const doctors = await response.json();
-                setFilteredDoctors(doctors);
-            } catch {
-                setFilteredDoctors([]);
-            }
         }
         fetchDoctors();
-    }, [query, district, thana, specialty, day]);
+    }, [doctors, query, district, thana, specialty, day]);
+
 
     const handleFindNearYou = () => {
         if (!("geolocation" in navigator)) {
@@ -381,7 +299,16 @@ export default function AppointDoctorPage() {
                 </div>
             </section>
 
-            <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <section className="mx-auto max-w-7xl px-4 pb-3 py-5 sm:px-6 lg:px-8">
+                {/* Map Container */}
+                <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                    <div style={{ height: "300px", width: "100%" }}>
+                        <LocationMap base={currentLocation} details={doctorMapDetails} />
+                    </div>
+                </div>
+            </section>
+
+            <section className="mx-auto max-w-7xl px-4 py-2 sm:px-6 lg:px-8">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <button
@@ -492,12 +419,6 @@ export default function AppointDoctorPage() {
             </section>
 
             <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-                {/* Map Container */}
-                <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
-                    <div style={{ height: "400px", width: "100%" }}>
-                        <LocationMap base={currentLocation} details={doctorMapDetails} />
-                    </div>
-                </div>
 
                 <div className="mb-4 flex items-center justify-between">
                     <p className="text-sm text-slate-500">
@@ -510,96 +431,102 @@ export default function AppointDoctorPage() {
                 </div>
 
                 <div className="space-y-4">
-                    {filteredDoctors.length === 0 ? (
-                        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-                            No doctors found for the selected filters.
-                        </div>
-                    ) : (
-                        filteredDoctors.map((doctor, index) => (
-                            <article
-                                key={`${doctor.name}-${index}`}
-                                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md sm:p-6"
-                            >
-                                <div className="grid gap-4 md:grid-cols-[88px_1fr_auto] md:items-center md:gap-5">
-                                    <div className="flex h-[88px] w-[88px] items-center justify-center rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white shadow-sm">
-                                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
-                                            {getInitials(doctor.name)}
-                                        </div>
-                                    </div>
+                    {
+                        isLoadingDoctors ? (
+                            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+                                Loading doctors...
+                            </div>
+                        ) :
+                            filteredDoctors.length === 0 ? (
+                                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+                                    No doctors found for the selected filters.
+                                </div>
+                            ) : (
+                                filteredDoctors.map((doctor, index) => (
+                                    <article
+                                        key={`${doctor.name}-${index}`}
+                                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md sm:p-6"
+                                    >
+                                        <div className="grid gap-4 md:grid-cols-[88px_1fr_auto] md:items-center md:gap-5">
+                                            <div className="flex h-[88px] w-[88px] items-center justify-center rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white shadow-sm">
+                                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
+                                                    {getInitials(doctor.name)}
+                                                </div>
+                                            </div>
 
-                                    <div>
-                                        <div className="flex items-center justify-between">
-                                            <h2 className="text-xl font-bold text-slate-900">{doctor.name}</h2>
-                                            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-600 border border-amber-200">
-                                                <Star className="fill-amber-500 text-amber-500" size={14} />
-                                                <span>{doctor.avgrating > 0 ? doctor.avgrating.toFixed(1) : "New"}</span>
+                                            <div>
+                                                <div className="flex items-center justify-between">
+                                                    <h2 className="text-xl font-bold text-slate-900">{doctor.name}</h2>
+                                                    <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-600 border border-amber-200">
+                                                        <Star className="fill-amber-500 text-amber-500" size={14} />
+                                                        <span>{doctor.avgrating > 0 ? doctor.avgrating.toFixed(1) : "New"}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="mt-1 text-sm text-slate-500">{doctor.hospital}</p>
+
+                                                <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                                                    <p className="inline-flex items-center gap-2">
+                                                        <Stethoscope size={16} className="text-blue-600" />
+                                                        <span>Specialty: {Array.isArray(doctor.specialization) ? doctor.specialization.join(", ") : doctor.specialization}</span>
+                                                    </p>
+                                                    <p className="inline-flex items-center gap-2">
+                                                        <MapPin size={16} className="text-blue-600" />
+                                                        <span>Location: {doctor.thana}, {doctor.district}</span>
+                                                    </p>
+                                                    <p className="inline-flex items-center gap-2 sm:col-span-2">
+                                                        <CalendarDays size={16} className="text-blue-600" />
+                                                        <span className="flex items-center gap-1.5">
+                                                            {WEEKDAY_CIRCLES.map((weekday, index) => {
+                                                                const activeDays = new Set(doctor.availabledays ?? []);
+                                                                const isActive = activeDays.has(DayToNumberMap[weekday.key]);
+
+                                                                return (
+                                                                    <span
+                                                                        key={`${weekday.key}-${index}`}
+                                                                        className={[
+                                                                            "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold",
+                                                                            isActive
+                                                                                ? "bg-blue-600 text-white"
+                                                                                : "border border-slate-300 bg-white text-slate-500",
+                                                                        ].join(" ")}
+                                                                        title={weekday.key}
+                                                                    >
+                                                                        {weekday.label}
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </span>
+                                                    </p>
+                                                </div>
+
+                                            </div>
+
+                                            <div className="md:justify-self-end">
+                                                <Link
+                                                    href={{
+                                                        pathname: "/appointment/booking-doctor",
+                                                        query: {
+                                                            doctorId: doctor.doctorid,
+                                                            name: doctor.name,
+                                                            hospital: doctor.hospital,
+                                                            specialization: Array.isArray(doctor.specialization)
+                                                                ? doctor.specialization.join(", ")
+                                                                : doctor.specialization,
+                                                            district: doctor.district,
+                                                            thana: doctor.thana,
+                                                            avgrating: doctor.avgrating,
+                                                            availabledays: (doctor.availabledays ?? []).join(","),
+                                                        },
+                                                    }}
+                                                    className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 md:w-auto"
+                                                >
+                                                    Appoint Now
+                                                </Link>
                                             </div>
                                         </div>
-                                        <p className="mt-1 text-sm text-slate-500">{doctor.hospital}</p>
-
-                                        <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                                            <p className="inline-flex items-center gap-2">
-                                                <Stethoscope size={16} className="text-blue-600" />
-                                                <span>Specialty: {Array.isArray(doctor.specialization) ? doctor.specialization.join(", ") : doctor.specialization}</span>
-                                            </p>
-                                            <p className="inline-flex items-center gap-2">
-                                                <MapPin size={16} className="text-blue-600" />
-                                                <span>Location: {doctor.thana}, {doctor.district}</span>
-                                            </p>
-                                            <p className="inline-flex items-center gap-2 sm:col-span-2">
-                                                <CalendarDays size={16} className="text-blue-600" />
-                                                <span className="flex items-center gap-1.5">
-                                                    {WEEKDAY_CIRCLES.map((weekday, index) => {
-                                                        const activeDays = new Set(doctor.availabledays ?? []);
-                                                        const isActive = activeDays.has(DayToNumberMap[weekday.key]);
-
-                                                        return (
-                                                            <span
-                                                                key={`${weekday.key}-${index}`}
-                                                                className={[
-                                                                    "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold",
-                                                                    isActive
-                                                                        ? "bg-blue-600 text-white"
-                                                                        : "border border-slate-300 bg-white text-slate-500",
-                                                                ].join(" ")}
-                                                                title={weekday.key}
-                                                            >
-                                                                {weekday.label}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </span>
-                                            </p>
-                                        </div>
-
-                                    </div>
-
-                                    <div className="md:justify-self-end">
-                                        <Link
-                                            href={{
-                                                pathname: "/appointment/booking-doctor",
-                                                query: {
-                                                    doctorId: doctor.doctorid,
-                                                    name: doctor.name,
-                                                    hospital: doctor.hospital,
-                                                    specialization: Array.isArray(doctor.specialization)
-                                                        ? doctor.specialization.join(", ")
-                                                        : doctor.specialization,
-                                                    district: doctor.district,
-                                                    thana: doctor.thana,
-                                                    avgrating: doctor.avgrating,
-                                                    availabledays: (doctor.availabledays ?? []).join(","),
-                                                },
-                                            }}
-                                            className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 md:w-auto"
-                                        >
-                                            Appoint Now
-                                        </Link>
-                                    </div>
-                                </div>
-                            </article>
-                        ))
-                    )}
+                                    </article>
+                                ))
+                            )}
                 </div>
             </section>
         </main>

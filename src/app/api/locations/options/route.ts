@@ -9,7 +9,7 @@ type LocationOptionRow = {
 };
 
 export async function GET() {
-const currentUser = await getCurrentUser();
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
