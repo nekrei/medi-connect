@@ -33,12 +33,14 @@ export default function CheckPrescriptionPage() {
             try {
                 setIsLoadingPrescriptions(true);
                 const response = await fetch(`/api/prescription/filterprescription`);
-                if (response.ok && isMounted) {
-                    setPrescriptions(await response.json());
-                }
-                else {
+                if (!response.ok) {
                     console.error('Failed to fetch prescriptions:', response.statusText);
                     if (isMounted) setPrescriptions([]);
+                    return;
+                }
+                const data = await response.json();
+                if (isMounted) {
+                    setPrescriptions(data);
                 }
             }
             catch (error) {
@@ -99,16 +101,16 @@ export default function CheckPrescriptionPage() {
             try {
                 const response = await fetch(`/api/prescription/selectedPrescription?${searchParams.toString()}`, { cache: 'no-store' });
                 if (response.ok) {
-                    if(isMounted) setSelectedPrescription(await response.json());
+                    if (isMounted) setSelectedPrescription(await response.json());
                 }
                 else {
                     console.error('Failed to fetch selected prescription:', response.statusText);
-                    if(isMounted) setSelectedPrescription(null);
+                    if (isMounted) setSelectedPrescription(null);
                 }
             }
             catch (error) {
                 console.error('Error fetching selected prescription:', error);
-                if(isMounted) setSelectedPrescription(null);
+                if (isMounted) setSelectedPrescription(null);
             }
         }
 
@@ -278,7 +280,7 @@ export default function CheckPrescriptionPage() {
                                                 Loading Prescriptions...
                                             </td>
                                         </tr>
-                                    ): filteredPrescriptions.length === 0 && (
+                                    ) : filteredPrescriptions.length === 0 && (
                                         <tr>
                                             <td colSpan={5} className="px-5 py-10 text-center text-sm text-slate-500">
                                                 No prescriptions found for the selected filters.
