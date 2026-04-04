@@ -5,7 +5,7 @@ import {z} from 'zod';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '@/lib/auth/cookie';
 import { createSessionToken } from '@/lib/auth/session';
 import { verifyPassword } from '@/lib/auth/password';
-import { ensureUsersTable, findDoctorByUserId, findUserByEmail } from '@/lib/repositories/user-repository';
+import { findDoctorByUserId, findUserByEmail } from '@/lib/repositories/user-repository';
 
 
 const loginSchema = z.object({
@@ -18,8 +18,6 @@ export async function POST(request: Request) {
     try{
         const body = await request.json();
         const data = loginSchema.parse(body);
-
-        await ensureUsersTable();
 
         const user = await findUserByEmail(data.email);
 

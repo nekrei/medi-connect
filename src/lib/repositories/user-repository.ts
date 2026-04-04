@@ -61,26 +61,6 @@ export type ContactUserInfo = {
 };
 
 
-
-export async function ensureUsersTable(): Promise<void> {
-  await sql`
-    CREATE TABLE IF NOT EXISTS Users (
-        UserId SERIAL PRIMARY KEY,
-        Username VARCHAR(50) UNIQUE NOT NULL,
-        FirstName VARCHAR(50) NOT NULL,
-        LastName VARCHAR(50),
-        Email VARCHAR(100),
-        DateOfBirth DATE NOT NULL,
-        Sex CHAR(1) CHECK (Sex IN ('M', 'F', 'O')),
-        BloodType VARCHAR(3) CHECK (BloodType IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
-        Password VARCHAR(255) NOT NULL,
-        Role VARCHAR(20) CHECK (Role IN ('Admin', 'User', 'Doctor')) NOT NULL,
-        LocationId INT,
-        FOREIGN KEY (LocationId) REFERENCES Locations(LocationId)
-    )
-  `;
-}
-
 /** Return the Doctors row for a given User id, or null if not a doctor. */
 export async function findDoctorByUserId(userId: number): Promise<DoctorInfo | null> {
     const rows = (await sql`

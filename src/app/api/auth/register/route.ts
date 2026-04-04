@@ -8,7 +8,6 @@ import {
     createPhoneNumber,
     createDoctor,
     createUser,
-    ensureUsersTable,
     findUserByEmail,
 } from '@/lib/repositories/user-repository';
 
@@ -37,8 +36,6 @@ export async function POST(request: Request) {
     // Role is derived server-side — never trusted from the client.
     const isDoctor = Boolean(data.registrationnumber);
     const role = isDoctor ? 'Doctor' : 'User';
-
-    await ensureUsersTable();
 
     const existing = await findUserByEmail(data.email);
     if (existing) {
