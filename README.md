@@ -78,6 +78,9 @@ The project is organized into a few major segments. Each segment has a clear res
 - **prescription-repository.ts**: contains queries for handling prescriptions, such as creating new prescriptions, fetching prescription details, and updating prescription status.
 - **test-report-repository.ts**: contains queries related to test reports, including uploading new reports, fetching report details, and managing report status.
 
+### Multiple Join and Aggregate SQL queries
+- In [](src/lib/repositories/appointment-repository.ts#L501-544)
+
 ### 8. SQL Procedures
 - Procedures are used for handling insertion logic in cases where insertion involved multiple tables and to ensure atomicity
 - [`add-poi`](/triggers.sql#L215-253): This handles addition of new location (hospitals, diagnostic centers) by first making a insertion into the **Locations** table and then to the table of relevant type. Used in [add-poi endpoint](src/app/api/locations/add-poi/route.ts)
