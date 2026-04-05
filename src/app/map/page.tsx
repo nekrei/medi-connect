@@ -1,12 +1,19 @@
 'use client';
 
+import { getCurrentUser } from "@/lib/auth/current-user";
 import dynamic  from "next/dynamic";    
+import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 const Map = dynamic(() => import('@/components/LeafletMap'), {
     ssr: false,
 });
 
-function MapPage() {
+async function MapPage() {
+     const user = await getCurrentUser();
+    
+        if (!user) {
+            redirect('/login');
+        }
     console.log('MapPage component rendering');
     const lng = 90.37;
     const lat = 23.75;

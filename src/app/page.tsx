@@ -58,17 +58,6 @@ export default function Home() {
                   Join as Doctor
                 </Link>
               </div>
-
-              <div className="flex items-center gap-8 text-gray-700 text-sm">
-                <div className="flex items-center gap-2">
-                  <span>🔒</span>
-                  <span>Secure & Private</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>👥</span>
-                  <span>10K+ Users</span>
-                </div>
-              </div>
             </div>
 
             <div className="relative">

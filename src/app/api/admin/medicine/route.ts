@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { pool } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -9,6 +10,15 @@ export interface Medicine{
 }
 
 export async function POST(request: Request) {
+     const currentUser = await getCurrentUser();
+    
+        if (!currentUser) {
+            return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
+        }
+    
+        if (currentUser.role !== 'Admin') {
+            return NextResponse.json({ status: 'error', message: 'Forbidden' }, { status: 403 });
+        }
     const client = await pool.connect();
     try{
         const body = await request.json();
