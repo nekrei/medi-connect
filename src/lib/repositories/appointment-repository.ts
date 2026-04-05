@@ -529,7 +529,7 @@ export async function checkSlotCount(scheduleId: number, appointDate: string):
                 ORDER BY hs.slotstart;`,
                 [scheduleId, appointDate]
             );
-            client.query('commit');
+            await client.query('commit');
             return res.rows.map((row) => ({
                 cnt: row.cnt,
                 starttime: row.slotstart,

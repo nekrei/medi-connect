@@ -18,7 +18,7 @@ import {
     Star
 } from "lucide-react";
 
-import { fetchDoctorSchedules, createPatientAppointment, fetchScheduleAvailability } from "./actions";
+import { fetchDoctorSchedules, createPatientAppointment, fetchScheduleAvailability, getChamberPrice } from "./actions";
 import { Schedule, slot } from "@/lib/repositories/appointment-repository";
 import { useRouter } from "next/navigation";
 
@@ -31,11 +31,6 @@ type CalendarDate = {
     isAvailable: boolean;
     isToday: boolean;
 };
-
-const PATIENT_TYPES = ["New Patient", "Follow-up Patient"];
-const CONSULTATION_TYPES = ["First Visit", "Report Review", "Second Opinion"];
-const MORNING_SLOTS = ["09:00 AM", "09:30 AM", "10:15 AM", "11:00 AM"];
-const EVENING_SLOTS = ["05:00 PM", "05:30 PM", "06:15 PM", "07:00 PM"];
 
 const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "short" });
 const weekdayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
@@ -117,11 +112,10 @@ function BookingDoctorContent() {
 
     const firstAvailableDate = calendarDates.find((date) => date.isAvailable)?.iso ?? calendarDates[0]?.iso ?? "";
 
-    const [patientType, setPatientType] = useState(PATIENT_TYPES[0]);
-    const [consultationType, setConsultationType] = useState(CONSULTATION_TYPES[0]);
     const [selectedDate, setSelectedDate] = useState(firstAvailableDate);
     const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
+    const [feeAmount, setFeeAmount] = useState<number | string>("...");
     const [isBooking, setIsBooking] = useState(false);
     
     // State to store availability data for the currently selected schedule and date
@@ -159,6 +153,24 @@ function BookingDoctorContent() {
         };
     }, [selectedScheduleId, selectedDate]);
 
+    useEffect(() => {
+        if (!selectedScheduleId) {
+            setFeeAmount("...");
+            return;
+        }
+        let isMounted = true;
+        setFeeAmount("Loading...");
+        getChamberPrice(selectedScheduleId).then(price => {
+            if (isMounted) setFeeAmount(price);
+        }).catch(err => {
+            console.error("Failed to fetch price", err);
+            if (isMounted) setFeeAmount("N/A");
+        });
+        return () => {
+            isMounted = false;
+        };
+    }, [selectedScheduleId]);
+
     const handleBooking = async () => {
         if (!doctorId || !selectedScheduleId || !selectedDate) return;
         try {
@@ -178,7 +190,6 @@ function BookingDoctorContent() {
         ? fullDateFormatter.format(new Date(`${selectedCalendarDate.iso}T00:00:00`))
         : "Select a date";
 
-    const feeAmount = consultationType === "Second Opinion" ? "1,500" : consultationType === "Report Review" ? "900" : "1,200";
     const isDateBookable = Boolean(selectedCalendarDate?.isAvailable);
 
     return (
@@ -234,61 +245,7 @@ function BookingDoctorContent() {
                             </div>
                         </div>
 
-                        <div className="grid gap-6 px-6 py-6 sm:px-8 lg:grid-cols-[1.1fr_0.9fr]">
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                <p className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">Consultation setup</p>
-                                <div className="mt-5 space-y-5">
-                                    <div>
-                                        <p className="text-sm font-semibold text-slate-700">Patient Type</p>
-                                        <div className="mt-3 flex flex-wrap gap-3">
-                                            {PATIENT_TYPES.map((option) => (
-                                                <button
-                                                    key={option}
-                                                    type="button"
-                                                    onClick={() => setPatientType(option)}
-                                                    className={[
-                                                        "rounded-full border px-4 py-2 text-sm font-semibold transition",
-                                                        patientType === option
-                                                            ? "border-blue-600 bg-blue-600 text-white"
-                                                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-600",
-                                                    ].join(" ")}
-                                                >
-                                                    {option}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm font-semibold text-slate-700">Consultation Type</p>
-                                        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                                            {CONSULTATION_TYPES.map((option) => (
-                                                <button
-                                                    key={option}
-                                                    type="button"
-                                                    onClick={() => setConsultationType(option)}
-                                                    className={[
-                                                        "rounded-2xl border px-4 py-4 text-left text-sm transition",
-                                                        consultationType === option
-                                                            ? "border-blue-600 bg-blue-50 text-blue-700 shadow-sm"
-                                                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-200",
-                                                    ].join(" ")}
-                                                >
-                                                    <span className="block font-bold">{option}</span>
-                                                    <span className="mt-1 block text-xs text-slate-500">
-                                                        {option === "First Visit"
-                                                            ? "Complete chamber assessment"
-                                                            : option === "Report Review"
-                                                                ? "Short follow-up review"
-                                                                : "Detailed specialist review"}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                        <div className="px-6 py-6 sm:px-8">
                             <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
                                 <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">Consultation details</p>
                                 <div className="mt-5 space-y-4 text-sm text-slate-700">
@@ -297,14 +254,6 @@ function BookingDoctorContent() {
                                         <div>
                                             <p className="font-semibold text-slate-900">Selected Date</p>
                                             <p>{dateHeading}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3">
-                                        <UserRound className="mt-0.5 text-blue-600" size={18} />
-                                        <div>
-                                            <p className="font-semibold text-slate-900">Patient Category</p>
-                                            <p>{patientType}</p>
                                         </div>
                                     </div>
 
@@ -453,14 +402,6 @@ function BookingDoctorContent() {
                                 <div className="flex items-start justify-between gap-3">
                                     <span className="text-slate-500">Location</span>
                                     <span className="text-right font-semibold text-slate-900">{thana}, {district}</span>
-                                </div>
-                                <div className="flex items-start justify-between gap-3">
-                                    <span className="text-slate-500">Visit Type</span>
-                                    <span className="text-right font-semibold text-slate-900">{consultationType}</span>
-                                </div>
-                                <div className="flex items-start justify-between gap-3">
-                                    <span className="text-slate-500">Patient Type</span>
-                                    <span className="text-right font-semibold text-slate-900">{patientType}</span>
                                 </div>
                                 <div className="flex items-start justify-between gap-3">
                                     <span className="text-slate-500">Consultation Fee</span>
