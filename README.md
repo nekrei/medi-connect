@@ -78,9 +78,32 @@ The project is organized into a few major segments. Each segment has a clear res
 - **prescription-repository.ts**: contains queries for handling prescriptions, such as creating new prescriptions, fetching prescription details, and updating prescription status.
 - **test-report-repository.ts**: contains queries related to test reports, including uploading new reports, fetching report details, and managing report status.
 
+### 8. SQL Procedures
+- Procedures are used for handling insertion logic in cases where insertion involved multiple tables and to ensure atomicity
+- [`add-poi`](/triggers.sql#L215-253): This handles addition of new location (hospitals, diagnostic centers) by first making a insertion into the **Locations** table and then to the table of relevant type. Used in [add-poi endpoint](src/app/api/locations/add-poi/route.ts)
+- [`add-chambers`](/triggers.sql#L255-277): This procedure simplifies addition of a new chamber for a doctor. It checks where the said chamber already exists (in which case it only updates relevant values to the **Chambers** table). Otherwise, it adds a new entry to the **Chambers** table.
+Used in [chambers endpoint](src/app/api/doctor/chambers/route.ts).
+- [`change-status`](/triggers.sql#L23-55): The workflow for accepting or rejecting requests for doctor status is:
+	- **accepting**: This also updates the role of the user to doctor in **Users** table. 
+	- **rejecting**: Delete the doctor from the **Doctors** table and add an entry to **RejectedDoctors** table.
+	- It is essential to ensure that for both cases the account updating the status has Admin privileges and update and rejected update is accompanied with added information like, the cause, time when status update and the responsible account. This procedure handles all these in a single atomic block.
+
+### 9. SQL Functions
+- SQL functions were used for two purposes: firstly, ensure reusability of code blocks that were used multiple times throughout the codebase and secondly to handle workflows where the output is obtained through complex queries
+- [`getDistrict`](/extras.sql#L1-14): The output is the district name of a relevant location obtained through multi-join on **Locations**, **Thanas** and **Districts** table.
+- [`getDistSq`](/extras.sql#L17-29): Simple function to determine distance between two locations based on coordinates
+- [`addressStirng`](/extras.sql#L32-57): Prettifies the address of a location and returns a single string that contains the entire address comma-separated. Used in:
+[fetching doctor schedule](src/lib/repositories/appointment-repository.ts#L193-226), [hospital locations](src/lib/repositories/appointment-repository.ts#L298-331).
+- [`get_doctor_specializations`](/extras.sql#L67-80): Lists all specializations of the doctor.
+- [`medicinecount`](/triggers.sql#L61-71) and [`testcount`](/triggers.sql#L74-84): returns number of tests and medicine of a relevant prescription
+- [`confirm_appointment`](/triggers.sql#L87-149): Designates an hourslot of a chamber schedule to an appointment. The entire functions locks the relevant chamber schedule for update, then finds the number of slots available and designates a time based on availability. also [`add_appointment`](/triggers.sql#L151-168) is used in tandem to handle the appointment workflow
+ 
+
 ### 10. Triggers
 - Defined in `triggers.sql`, these are database-level rules that automatically execute certain actions in response to specific events (like inserts, updates, or deletes).
-- // explanation of each triggers
+- [`rejected_doctor_handler`](/triggers.sql#L1-21):  automatically updates the role in **Users** table or creates a row in **RejectedDoctors** table based on the change in doctor status
+- [`appointment_status_update_checker`](/triggers.sql#L172-189): auto blocks appointment requests or approvals that were made later than the expected time (3 hours prior to schedule).
+- [`completing_appointment`](/triggers.sql#L210-253): Automatically sets appointment as completed based to doctor workflow. Whenever an entry is made into prescriptions for a specific appointment, it is marked as completed.
 
 ### 11. User Flows and Interactions
 - The application supports various user flows, such as patient registration, login, viewing the dashboard, and managing medical records.
