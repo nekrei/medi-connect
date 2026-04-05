@@ -1,17 +1,24 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
+Install relevant dependencies
+```bash
+npm install
+```
+Acquire connection string for the database (preferrably on NeonDB)
+Acquire a 32 character string for Auth_Secret
 
-First, run the development server:
+Setup `.env.local` file in root directory as follows:
+```bash
+DATABASE_URL= YOUR_DATABASE_CONNECTION_STRING
+AUTH_SECRET= YOUR_AUTH_SECRET
+AUTH_COOKIE_NAME="app_session"
+```
+
+run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
