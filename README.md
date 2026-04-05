@@ -79,7 +79,9 @@ The project is organized into a few major segments. Each segment has a clear res
 - **test-report-repository.ts**: contains queries related to test reports, including uploading new reports, fetching report details, and managing report status.
 
 ### Multiple Join and Aggregate SQL queries
-- In [](src/lib/repositories/appointment-repository.ts#L501-544)
+- In [appointment handling](src/lib/repositories/appointment-repository.ts#L501-544) we make use of recursive Common Table Expression (CTE) and aggregate functions to find the number of slots available for each schedule
+- In [search doctor endpoint](src/lib/repositories/doctor-appointment-repository.ts), multi-table join is used to get a list of doctors of a particular location (thana, district etc). Furthermore, aggregate function is used to get the average of ratings for the particular doctor as well 
+- In [get available days](extras.sql#L83-117), multiple join is used to find the weekdays of schedules of doctors OPD chambers.
 
 ### 8. SQL Procedures
 - Procedures are used for handling insertion logic in cases where insertion involved multiple tables and to ensure atomicity
