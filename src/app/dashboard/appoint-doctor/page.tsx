@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, MapPin, Stethoscope, CalendarDays, LocateFixed, Star } from "lucide-react";
+import { Search, MapPin, Stethoscope, CalendarDays, LocateFixed, Star, ChevronDown, ChevronUp, Building } from "lucide-react";
 import { DoctorSearchRow } from "@/lib/repositories/doctor-appointment-repository";
 import dynamic from "next/dynamic";
 import type { MapCoords, LocDetails } from "@/components/LeafletMap";
@@ -99,6 +99,15 @@ export default function AppointDoctorPage() {
         lat: 23.8103,
         lng: 90.3654,
     });
+    
+    const [expandedDoctors, setExpandedDoctors] = useState<Record<number, boolean>>({});
+
+    const toggleDoctor = (doctorId: number) => {
+        setExpandedDoctors((prev) => ({
+            ...prev,
+            [doctorId]: !prev[doctorId],
+        }));
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -261,6 +270,17 @@ export default function AppointDoctorPage() {
         );
     };
 
+    const groupedDoctors = useMemo(() => {
+        const groups: Record<number, DoctorSearchRow[]> = {};
+        for (const doc of filteredDoctors) {
+            if (!groups[doc.doctorid]) {
+                groups[doc.doctorid] = [];
+            }
+            groups[doc.doctorid].push(doc);
+        }
+        return Object.values(groups);
+    }, [filteredDoctors]);
+
     // Convert filtered doctors to map details
     const doctorMapDetails = useMemo(() => {
         const detailsArray: LocDetails[] = [];
@@ -422,8 +442,8 @@ export default function AppointDoctorPage() {
 
                 <div className="mb-4 flex items-center justify-between">
                     <p className="text-sm text-slate-500">
-                        Showing <span className="font-semibold text-slate-700">{filteredDoctors.length}</span>{" "}
-                        consultant{filteredDoctors.length === 1 ? "" : "s"}
+                        Showing <span className="font-semibold text-slate-700">{groupedDoctors.length}</span>{" "}
+                        consultant{groupedDoctors.length === 1 ? "" : "s"}
                     </p>
                     <Link href="/dashboard" className="text-sm font-medium text-blue-600 hover:text-blue-700">
                         Back to Dashboard
@@ -437,95 +457,119 @@ export default function AppointDoctorPage() {
                                 Loading doctors...
                             </div>
                         ) :
-                            filteredDoctors.length === 0 ? (
+                            groupedDoctors.length === 0 ? (
                                 <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
                                     No doctors found for the selected filters.
                                 </div>
                             ) : (
-                                filteredDoctors.map((doctor, index) => (
-                                    <article
-                                        key={`${doctor.name}-${index}`}
-                                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md sm:p-6"
-                                    >
-                                        <div className="grid gap-4 md:grid-cols-[88px_1fr_auto] md:items-center md:gap-5">
-                                            <div className="flex h-[88px] w-[88px] items-center justify-center rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white shadow-sm">
-                                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
-                                                    {getInitials(doctor.name)}
-                                                </div>
-                                            </div>
+                                groupedDoctors.map((chambers, index) => {
+                                    const doctor = chambers[0];
+                                    const isExpanded = expandedDoctors[doctor.doctorid] || false;
 
-                                            <div>
-                                                <div className="flex items-center justify-between">
-                                                    <h2 className="text-xl font-bold text-slate-900">{doctor.name}</h2>
-                                                    <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-600 border border-amber-200">
-                                                        <Star className="fill-amber-500 text-amber-500" size={14} />
-                                                        <span>{doctor.avgrating > 0 ? doctor.avgrating.toFixed(1) : "New"}</span>
+                                    return (
+                                        <article
+                                            key={`${doctor.doctorid}-${index}`}
+                                            className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                                        >
+                                            <div 
+                                                className="grid cursor-pointer gap-4 p-5 md:grid-cols-[88px_1fr_auto] md:items-center md:gap-5 sm:p-6"
+                                                onClick={() => toggleDoctor(doctor.doctorid)}
+                                            >
+                                                <div className="flex h-[88px] w-[88px] items-center justify-center rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white shadow-sm">
+                                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
+                                                        {getInitials(doctor.name)}
                                                     </div>
                                                 </div>
-                                                <p className="mt-1 text-sm text-slate-500">{doctor.hospital}</p>
 
-                                                <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                                                    <p className="inline-flex items-center gap-2">
-                                                        <Stethoscope size={16} className="text-blue-600" />
-                                                        <span>Specialty: {Array.isArray(doctor.specialization) ? doctor.specialization.join(", ") : doctor.specialization}</span>
-                                                    </p>
-                                                    <p className="inline-flex items-center gap-2">
-                                                        <MapPin size={16} className="text-blue-600" />
-                                                        <span>Location: {doctor.thana}, {doctor.district}</span>
-                                                    </p>
-                                                    <p className="inline-flex items-center gap-2 sm:col-span-2">
-                                                        <CalendarDays size={16} className="text-blue-600" />
-                                                        <span className="flex items-center gap-1.5">
-                                                            {WEEKDAY_CIRCLES.map((weekday, index) => {
-                                                                const activeDays = new Set(doctor.availabledays ?? []);
-                                                                const isActive = activeDays.has(DayToNumberMap[weekday.key]);
-
-                                                                return (
-                                                                    <span
-                                                                        key={`${weekday.key}-${index}`}
-                                                                        className={[
-                                                                            "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold",
-                                                                            isActive
-                                                                                ? "bg-blue-600 text-white"
-                                                                                : "border border-slate-300 bg-white text-slate-500",
-                                                                        ].join(" ")}
-                                                                        title={weekday.key}
-                                                                    >
-                                                                        {weekday.label}
-                                                                    </span>
-                                                                );
-                                                            })}
-                                                        </span>
-                                                    </p>
+                                                <div>
+                                                    <div className="flex items-center justify-between">
+                                                        <h2 className="text-xl font-bold text-slate-900">{doctor.name}</h2>
+                                                        <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-600 border border-amber-200">
+                                                            <Star className="fill-amber-500 text-amber-500" size={14} />
+                                                            <span>{doctor.avgrating > 0 ? doctor.avgrating.toFixed(1) : "New"}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                                                        <p className="inline-flex items-center gap-2">
+                                                            <Stethoscope size={16} className="text-blue-600" />
+                                                            <span>Specialty: {Array.isArray(doctor.specialization) ? doctor.specialization.join(", ") : doctor.specialization}</span>
+                                                        </p>
+                                                        <p className="inline-flex items-center gap-2">
+                                                            <Building size={16} className="text-blue-600" />
+                                                            <span>{chambers.length} Chamber{chambers.length > 1 ? "s" : ""}</span>
+                                                        </p>
+                                                    </div>
                                                 </div>
 
+                                                <div className="flex justify-end pr-2 text-slate-400">
+                                                    {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                                                </div>
                                             </div>
 
-                                            <div className="md:justify-self-end">
-                                                <Link
-                                                    href={{
-                                                        pathname: "/appointment/booking-doctor",
-                                                        query: {
-                                                            doctorId: doctor.doctorid,
-                                                            name: doctor.name,
-                                                            hospital: doctor.hospital,
-                                                            specialization: Array.isArray(doctor.specialization)
-                                                                ? doctor.specialization.join(", ")
-                                                                : doctor.specialization,
-                                                            district: doctor.district,
-                                                            thana: doctor.thana,
-                                                            avgrating: doctor.avgrating,
-                                                            availabledays: (doctor.availabledays ?? []).join(","),
-                                                        },
-                                                    }}
-                                                    className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 md:w-auto"
-                                                >
-                                                    Appoint Now
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </article>
-                                ))
+                                            {isExpanded && (
+                                                <div className="border-t border-slate-100 bg-slate-50 p-5 sm:p-6 space-y-4">
+                                                    {chambers.map((chamber, cIndex) => (
+                                                        <div key={`${chamber.doctorid}-${cIndex}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                                            <div>
+                                                                <h3 className="font-semibold text-slate-900">{chamber.hospital}</h3>
+                                                                <p className="inline-flex flex-wrap items-center gap-2 mt-1 text-sm text-slate-600">
+                                                                    <MapPin size={16} className="text-blue-600" />
+                                                                    <span>Location: {chamber.thana}, {chamber.district}</span>
+                                                                </p>
+                                                                <div className="mt-2 flex items-center gap-2 sm:col-span-2">
+                                                                    <CalendarDays size={16} className="text-blue-600" />
+                                                                    <span className="flex items-center gap-1.5 flex-wrap">
+                                                                        {WEEKDAY_CIRCLES.map((weekday, index) => {
+                                                                            const activeDays = new Set(chamber.availabledays ?? []);
+                                                                            const isActive = activeDays.has(DayToNumberMap[weekday.key]);
+
+                                                                            return (
+                                                                                <span
+                                                                                    key={`${weekday.key}-${index}`}
+                                                                                    className={[
+                                                                                        "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold",
+                                                                                        isActive
+                                                                                            ? "bg-blue-600 text-white"
+                                                                                            : "border border-slate-300 bg-white text-slate-500",
+                                                                                    ].join(" ")}
+                                                                                    title={weekday.key}
+                                                                                >
+                                                                                    {weekday.label}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="sm:self-end mt-2 sm:mt-0">
+                                                                <Link
+                                                                    href={{
+                                                                        pathname: "/appointment/booking-doctor",
+                                                                        query: {
+                                                                            doctorId: chamber.doctorid,
+                                                                            name: chamber.name,
+                                                                            hospital: chamber.hospital,
+                                                                            specialization: Array.isArray(chamber.specialization)
+                                                                                ? chamber.specialization.join(", ")
+                                                                                : chamber.specialization,
+                                                                            district: chamber.district,
+                                                                            thana: chamber.thana,
+                                                                            avgrating: chamber.avgrating,
+                                                                            availabledays: (chamber.availabledays ?? []).join(","),
+                                                                        },
+                                                                    }}
+                                                                    className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 sm:w-auto"
+                                                                >
+                                                                    Appoint Now
+                                                                </Link>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </article>
+                                    );
+                                })
                             )}
                 </div>
             </section>
