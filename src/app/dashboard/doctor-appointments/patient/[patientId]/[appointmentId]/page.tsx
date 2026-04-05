@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ChevronLeft, Mail, MapPin, Phone, UserCircle2 } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { getCurrentUser, isApprovedDoctor } from '@/lib/auth/current-user';
 import { getDoctorAppointmentDetailsById } from '@/lib/repositories/appointment-repository';
 import { fetchBasicUserInfo, fetchContactUserInfo } from '@/lib/repositories/user-repository';
 
@@ -18,8 +18,12 @@ export default async function DoctorPatientProfilePage({
     params: Promise<{ patientId: string; appointmentId: string }>;
 }) {
     const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== 'Doctor') {
+    if (!currentUser) {
         redirect('/login');
+    }
+
+    if (!(await isApprovedDoctor(currentUser))) {
+        redirect('/doctor/pending');
     }
 
     const doctorId = Number(currentUser.id);

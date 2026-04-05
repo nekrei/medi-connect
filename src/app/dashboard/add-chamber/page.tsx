@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getCurrentUser, isApprovedDoctor } from "@/lib/auth/current-user";
 import AddChamberClient from "./add-chamber-client";
 
 export default async function AddChamberPage() {
     const user = await getCurrentUser();
-    
-    if (!user || (user.role !== "Doctor" && user.role !== "Admin")) {
-        redirect("/dashboard");
+
+    if (!user) {
+        redirect('/login');
+    }
+
+    if (!(await isApprovedDoctor(user))) {
+        redirect('/doctor/pending');
     }
 
     return (

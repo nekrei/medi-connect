@@ -18,7 +18,7 @@ export async function fetchScheduleAvailability(scheduleId: number, date: string
 
 export async function createPatientAppointment(doctorId: number, scheduleId: number, appointDate: string) {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'User') {
+    if (!user) {
         throw new Error('Unauthorized');
     }
 

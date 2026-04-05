@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 
 import { SESSION_COOKIE_NAME } from '@/lib/auth/cookie';
 import { verifySessionToken } from '@/lib/auth/session';
+import { sql } from '@/lib/db';
 
 export type CurrentUser = {
   id: string;
@@ -12,6 +13,21 @@ export type CurrentUser = {
   role: 'Admin' | 'Doctor' | 'User';
   doctorStatus?: 'Approved' | 'Pending' | 'Rejected';     
 };
+
+export async function isApprovedDoctor(user: CurrentUser | null | undefined): Promise<boolean> {
+  if (user?.role !== 'Doctor') {
+    return false;
+  }
+
+  const rows = (await sql`
+    SELECT approvalstatus
+    FROM doctors
+    WHERE doctorid = ${Number(user.id)}
+    LIMIT 1
+  `) as Array<{ approvalstatus: 'Approved' | 'Pending' | 'Rejected' }>;
+
+  return rows[0]?.approvalstatus === 'Approved';
+}
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { getCurrentUser, isApprovedDoctor } from '@/lib/auth/current-user';
 import { redirect } from 'next/navigation';
 
 import { getAppointmentByPatient } from '@/lib/repositories/appointment-repository';
@@ -52,18 +52,18 @@ const MedicalDashboard = async () => {
     }
 
     const userName = user.name;
-    const isDoctor = user.role === 'Doctor';
+    const isDoctor = await isApprovedDoctor(user);
     const patientAppointments = await getAppointmentByPatient(parseInt(user.id, 10));
-    
+
     // FETCH PRESCRIPTIONS
     const pastPrescriptions = await getSearchedPrescriptions({
         patientId: user.id,
     });
-    
+
     const upcomingAppointments = patientAppointments.filter(a => a.status === 'Pending' || a.status === 'Scheduled');
     const pastAppointments = patientAppointments.filter(a => a.status !== 'Pending' && a.status !== 'Scheduled');
-    
-    const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments.sort((a,b) => {
+
+    const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments.sort((a, b) => {
         const timeA = a.timeslot ? new Date(a.timeslot).getTime() : (a.requestedat ? new Date(a.requestedat).getTime() : 0);
         const timeB = b.timeslot ? new Date(b.timeslot).getTime() : (b.requestedat ? new Date(b.requestedat).getTime() : 0);
         return timeA - timeB;
@@ -88,7 +88,7 @@ const MedicalDashboard = async () => {
         }))
     ];
 
-    const recentHistory = historyItems.sort((a,b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
+    const recentHistory = historyItems.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
 
     return (
         <div className="min-h-screen bg-slate-50 flex">
@@ -138,14 +138,14 @@ const MedicalDashboard = async () => {
                                 icon={<Bell size={24} />}
                                 colorClass="bg-amber-100 text-amber-600"
                                 href='/dashboard/doctor-pending-appointments'
-                            />                            
+                            />
                             <ActionCard
                                 title="Add New Chamber"
                                 description="Setup new practice chambers across hospitals and define customized visiting schedules easily."
                                 icon={<CalendarPlus size={24} />}
                                 colorClass="bg-emerald-100 text-emerald-600"
                                 href='/dashboard/add-chamber'
-                            />                        
+                            />
                         </div>
                     </div>
                 )}
@@ -154,7 +154,7 @@ const MedicalDashboard = async () => {
                     <h2 className="text-xl font-bold text-slate-800 mb-4">Patient Actions</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <ActionCard
-                            title= "My Appointments"
+                            title="My Appointments"
                             description={isDoctor ? "View the past and upcoming appointments you made as a patient." : "View your past and upcoming appointments."}
                             icon={<CalendarPlus size={24} />}
                             colorClass={isDoctor ? "bg-indigo-100 text-indigo-600" : "bg-blue-100 text-blue-600"}
@@ -197,9 +197,9 @@ const MedicalDashboard = async () => {
                         <h2 className="text-xl font-bold text-slate-800">Recent Medical History</h2>
                         <div className="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-50 overflow-hidden">
                             {recentHistory.length > 0 ? recentHistory.map((item, idx) => (
-                                <Link 
+                                <Link
                                     href={item.href}
-                                    key={idx} 
+                                    key={idx}
                                     className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer block"
                                 >
                                     <div className="flex-1">

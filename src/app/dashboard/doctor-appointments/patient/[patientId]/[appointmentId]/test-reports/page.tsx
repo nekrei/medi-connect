@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ChevronLeft, ExternalLink, FileText, FlaskConical } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { getCurrentUser, isApprovedDoctor } from '@/lib/auth/current-user';
 import { getDoctorAppointmentDetailsById } from '@/lib/repositories/appointment-repository';
 import { getPatientPrescribedTestsWithReports } from '@/lib/repositories/test-report-repository';
 
@@ -23,8 +23,12 @@ export default async function PatientTestReportsPage({
     params: Promise<{ patientId: string; appointmentId: string }>;
 }) {
     const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== 'Doctor') {
+    if (!currentUser) {
         redirect('/login');
+    }
+
+    if (!(await isApprovedDoctor(currentUser))) {
+        redirect('/doctor/pending');
     }
 
     const doctorId = Number(currentUser.id);

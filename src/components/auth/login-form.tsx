@@ -7,6 +7,13 @@ type ApiError = {
     message?: string;
 };
 
+type LoginApiSuccess = {
+    user?: {
+        role?: 'Admin' | 'Doctor' | 'User';
+        doctorStatus?: 'Approved' | 'Pending' | 'Rejected';
+    };
+};
+
 export default function LoginForm() {
     const router = useRouter();
     const [email, setEmail] = useState('');
@@ -18,10 +25,10 @@ export default function LoginForm() {
         event.preventDefault();
         setIsSubmitting(true);
         setErrorMessage('');
-        
+
         try {
             const response = await fetch('/api/auth/login', {
-                method: 'POST', 
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
@@ -32,7 +39,13 @@ export default function LoginForm() {
                 return;
             }
 
-            router.push('/dashboard');
+            const payload = (await response.json()) as LoginApiSuccess;
+            const nextPath =
+                payload.user?.role === 'Doctor' && payload.user.doctorStatus !== 'Approved'
+                    ? '/doctor/pending'
+                    : '/dashboard';
+
+            router.push(nextPath);
             router.refresh();
         } catch {
             setErrorMessage('Unexpected error. Please try again.');

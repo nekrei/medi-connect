@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Activity } from "lucide-react";
+import { redirect } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getCurrentUser, isApprovedDoctor } from "@/lib/auth/current-user";
 import LogoutButton from "@/components/auth/logout-button";
 
 export const metadata: Metadata = {
@@ -22,8 +23,13 @@ export default async function DashboardLayout({
     children: React.ReactNode;
 }>) {
     const user = await getCurrentUser();
+
+    if (!user) {
+        redirect('/login');
+    }
+
     const isAdmin = user?.role === "Admin";
-    const isDoctor = user?.role === "Doctor";
+    const isDoctor = await isApprovedDoctor(user);
 
     return (
         <div className="min-h-screen bg-slate-50 lg:flex">

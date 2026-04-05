@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { getCurrentUser, isApprovedDoctor } from '@/lib/auth/current-user';
 import {
     updateBasicProfileInfo,
     updateContactProfileInfo,
@@ -58,7 +58,7 @@ export async function PATCH(request: Request) {
         }
 
         if (payload.section === 'doctor') {
-            if (currentUser.role !== 'Doctor') {
+            if (!(await isApprovedDoctor(currentUser))) {
                 return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
             }
 

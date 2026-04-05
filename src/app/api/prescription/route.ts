@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getCurrentUser, isApprovedDoctor } from "@/lib/auth/current-user";
 import { pool } from "@/lib/db";
 import { NextResponse } from "next/server";
 export type Prescription = {
@@ -11,8 +11,12 @@ export type Prescription = {
 }
 export async function POST(req: Request) {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'Doctor') {
+    if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await isApprovedDoctor(user))) {
+        return NextResponse.json({ error: 'Doctor approval required' }, { status: 403 });
     }
     const client = await pool.connect();
     try{

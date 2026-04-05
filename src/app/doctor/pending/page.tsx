@@ -14,15 +14,16 @@ export default async function DoctorPendingPage() {
     redirect('/dashboard');
   }
 
+  if (user.doctorStatus === 'Approved') {
+    redirect('/dashboard');
+  }
+
   let title = '';
   let message = '';
 
   if (user.doctorStatus === 'Pending') {
     title = 'Approval Pending';
     message = 'Your request for doctor privileges is awaiting admin approval.';
-  } else if (user.doctorStatus === 'Approved') {
-    title = 'Approved!';
-    message = 'You are approved as a doctor.';
   } else if (user.doctorStatus === 'Rejected') {
     title = 'Approval Rejected';
     message = 'Your approval has been rejected by the admin.';
@@ -33,7 +34,7 @@ export default async function DoctorPendingPage() {
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-bold mb-4 text-gray-800">{title}</h1>
         <p className="text-gray-600 mb-8">{message}</p>
-        <Link 
+        <Link
           href="/dashboard"
           className="inline-block bg-blue-600 text-white font-medium px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
         >

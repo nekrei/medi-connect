@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { getCurrentUser, isApprovedDoctor } from '@/lib/auth/current-user';
 import { redirect } from 'next/navigation';
 import { pool } from '@/lib/db';
 import PrescribeClient from './prescribe-client';
@@ -6,8 +6,12 @@ import PrescribeClient from './prescribe-client';
 export default async function PrescribePage(props: { params: Promise<{ appointmentId: string }> }) {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== 'Doctor') {
+    if (!user) {
         redirect('/login');
+    }
+
+    if (!(await isApprovedDoctor(user))) {
+        redirect('/doctor/pending');
     }
 
     const { appointmentId } = await props.params;

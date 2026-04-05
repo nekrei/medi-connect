@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { getCurrentUser, isApprovedDoctor } from '@/lib/auth/current-user';
 import {
     AppointmentStatus,
     listDoctorAppointmentHospitals,
@@ -23,8 +23,8 @@ export async function GET(request: Request) {
         return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
 
-    if (currentUser.role !== 'Doctor') {
-        return NextResponse.json({ status: 'error', message: 'Forbidden' }, { status: 403 });
+    if (!(await isApprovedDoctor(currentUser))) {
+        return NextResponse.json({ status: 'error', message: 'Doctor approval required' }, { status: 403 });
     }
 
     const doctorId = Number(currentUser.id);

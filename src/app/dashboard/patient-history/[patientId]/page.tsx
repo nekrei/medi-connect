@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { getCurrentUser, isApprovedDoctor } from '@/lib/auth/current-user';
 import { getSearchedPrescriptions } from '@/lib/repositories/prescription-repository';
 import { doctorHasScheduledAppointmentWithPatient } from '@/lib/repositories/appointment-repository';
 import Link from 'next/link';
@@ -9,8 +9,12 @@ import PatientHistoryClient from './patient-history-client';
 export default async function PatientHistoryPage({ params }: { params: Promise<{ patientId: string }> }) {
     const user = await getCurrentUser();
 
-    if (!user || user.role !== 'Doctor') {
+    if (!user) {
         redirect('/login');
+    }
+
+    if (!(await isApprovedDoctor(user))) {
+        redirect('/doctor/pending');
     }
 
     const { patientId } = await params;
